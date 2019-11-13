@@ -48,11 +48,15 @@ int main()
     window.setVerticalSyncEnabled(true);
     sf::Texture texture;
     texture.loadFromFile("csgo.png");
-    sf::Vector2i texture_index{2, 0};
+    sf::Vector2i floor_texture_index{2, 2};
+    sf::Vector2i ceiling_texture_index{2, 1};
+    sf::Vector2i wall_texture_index{2, 0};
     static std::size_t tex_width = 256;
     static std::size_t tex_height = 256;
 
-    sf::VertexArray lines(sf::Lines, w * 2);
+    // 2 vertices for a line, 3 lines (ceiling wall floor)
+    int vertice_count_per_column = 2 * 3;
+    sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
     sf::Clock clock;
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
@@ -99,7 +103,7 @@ int main()
             planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
         }
 
-        for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += 2) {
+        for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += vertice_count_per_column) {
             //calculate ray position and direction
             double cameraX = 2 * x / double(w) - 1; //x-coordinate in camera space
 
@@ -182,12 +186,103 @@ int main()
             if (side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
             if (side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
 
-            // Prepare line
-            sf::Vector2f offset{(float)texture_index.x * tex_width, (float)texture_index.y * tex_height};
-            lines[idx_vx].texCoords = {float(offset.x + texX), (float)offset.y};
-            lines[idx_vx + 1].texCoords = {float(offset.x + texX), (float)offset.y + tex_height};
-            lines[idx_vx].position = {float(x), (float) drawStart};
-            lines[idx_vx + 1].position = {float(x), (float) drawEnd};
+
+            // Prepare wall line
+            {
+                sf::Vector2f offset{(float)wall_texture_index.x * tex_width, (float)wall_texture_index.y * tex_height};
+                lines[idx_vx + 0].texCoords = offset + sf::Vector2f{float(texX), 0};
+                lines[idx_vx + 1].texCoords = offset + sf::Vector2f{float(texX), (float)tex_height};
+                lines[idx_vx + 0].position = {float(x), (float) drawStart};
+                lines[idx_vx + 1].position = {float(x), (float) drawEnd};
+            }
+
+
+            //FLOOR CASTING
+            double floorXWall, floorYWall; //x, y position of the floor texel at the bottom of the wall
+
+            //4 different wall directions possible
+            if(side == 0 && rayDirX > 0)
+            {
+                floorXWall = mapX;
+                floorYWall = mapY + wallX;
+            }
+            else if(side == 0 && rayDirX < 0)
+            {
+                floorXWall = mapX + 1.0;
+                floorYWall = mapY + wallX;
+            }
+            else if(side == 1 && rayDirY > 0)
+            {
+                floorXWall = mapX + wallX;
+                floorYWall = mapY;
+            }
+            else
+            {
+                floorXWall = mapX + wallX;
+                floorYWall = mapY + 1.0;
+            }
+
+            double distWall, distPlayer;
+
+            distWall = perpWallDist;
+            distPlayer = 0.0;
+
+
+            double top_currentDist = h / (2.0 * (drawEnd + 1) - h);
+            double bottom_currentDist = h / (2.0 * (h - 1) - h);
+            double top_weight = (top_currentDist - distPlayer) / (distWall - distPlayer);
+            double bottom_weight = (bottom_currentDist - distPlayer) / (distWall - distPlayer);
+            double top_floorX = top_weight * floorXWall + (1.0 - top_weight) * posX;
+            double top_floorY = top_weight * floorYWall + (1.0 - top_weight) * posY;
+            std::cout << h << " " << drawEnd << " " << top_currentDist << "  " << bottom_currentDist <<
+                        " topw: " << top_weight << " bottomw: " << bottom_weight <<
+                        " topFX: " << top_floorX << "  topFY: " << top_floorY <<
+             std::endl;
+            double bottom_floorX = bottom_weight * floorXWall + (1.0 - bottom_weight) * posX;
+            double bottom_floorY = bottom_weight * floorYWall + (1.0 - bottom_weight) * posY;
+
+            int top_floorTexX = int(top_floorX * tex_width) % tex_width;
+            int top_floorTexY = int(top_floorY * tex_height) % tex_height;
+            int bottom_floorTexX = int(bottom_floorX * tex_width) % tex_width;
+            int bottom_floorTexY = int(bottom_floorY * tex_height) % tex_height;
+
+            // Prepare floor line
+            {
+                sf::Vector2f offset{(float)floor_texture_index.x * tex_width, (float)floor_texture_index.y * tex_height};
+                //std::cout << top_floorX << "  " << top_floorY << std::endl;
+                lines[idx_vx + 2].texCoords = offset + sf::Vector2f{float(top_floorTexX), float(top_floorTexY)};
+                lines[idx_vx + 3].texCoords = offset + sf::Vector2f{float(bottom_floorTexX), float(bottom_floorTexY)};
+                lines[idx_vx + 2].position = {float(x), (float) drawEnd + 1};
+                lines[idx_vx + 3].position = {float(x), (float) h};
+            }
+
+            // Prepare ceiling line
+            {
+                sf::Vector2f offset{(float)ceiling_texture_index.x * tex_width, (float)ceiling_texture_index.y * tex_height};
+                //std::cout << top_floorX << "  " << top_floorY << std::endl;
+                lines[idx_vx + 4].texCoords = offset + sf::Vector2f{float(top_floorTexX), float(top_floorTexY)};
+                lines[idx_vx + 5].texCoords = offset + sf::Vector2f{float(bottom_floorTexX), float(bottom_floorTexY)};
+                lines[idx_vx + 4].position = {float(x), (float) 0};
+                lines[idx_vx + 5].position = {float(x), (float) h - (drawEnd + 1)};
+            }
+
+
+
+            //draw the floor from drawEnd to the bottom of the screen
+            for(int y = drawEnd + 1; y < h; y++)
+            {
+                double currentDist = h / (2.0 * y - h); //you could make a small lookup table for this instead
+                double weight = (currentDist - distPlayer) / (distWall - distPlayer);
+                double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
+                double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
+
+                int floorTexX, floorTexY;
+                floorTexX = int(currentFloorX * tex_width) % tex_width;
+                floorTexY = int(currentFloorY * tex_height) % tex_height;
+
+                //buffer[y][x] = (texture[3][tex_width * floorTexY + floorTexX] >> 1) & 8355711;
+                //buffer[h - y][x] = texture[6][tex_width * floorTexY + floorTexX];
+            }
         }
 
         // Clear screen
