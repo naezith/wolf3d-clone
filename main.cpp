@@ -174,9 +174,9 @@ int main()
 
             //calculate lowest and highest pixel to fill in current stripe
             int drawStart = -lineHeight / 2 + h / 2;
-            if (drawStart < 0)drawStart = 0;
+            //if (drawStart < 0)drawStart = 0;
             int drawEnd = lineHeight / 2 + h / 2;
-            if (drawEnd >= h)drawEnd = h - 1;
+            //if (drawEnd >= h)drawEnd = h - 1;
 
             //calculate value of wallX
             double wallX; //where exactly the wall was hit
