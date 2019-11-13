@@ -37,8 +37,6 @@ static int worldMap[mapWidth][mapHeight] =
 static double posX = 22, posY = 12;  //x and y start position
 static double dirX = -1, dirY = 0; //initial direction vector
 static double planeX = 0, planeY = 1.03; //the 2d raycaster version of camera plane
-static std::size_t tex_width = 256;
-static std::size_t tex_height = 256;
 
 static const int w = 1280;
 static const int h = 720;
@@ -53,6 +51,8 @@ int main()
     sf::Image image;
     image.loadFromFile("another_wall.png");
     texture.loadFromFile("another_wall.png");
+    static std::size_t tex_width = texture.getSize().x;
+    static std::size_t tex_height = texture.getSize().y;
 
     sf::VertexArray pixels(sf::Points, w * h);
     sf::VertexArray lines(sf::Lines, w * 2);
