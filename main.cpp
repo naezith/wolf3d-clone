@@ -50,7 +50,7 @@ int main()
     sf::Texture texture;
     sf::Image image;
     image.loadFromFile("another_wall.png");
-    texture.loadFromFile("another_wall.png");
+    texture.loadFromFile("banner.png");
     static std::size_t tex_width = texture.getSize().x;
     static std::size_t tex_height = texture.getSize().y;
 
