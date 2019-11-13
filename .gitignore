@@ -2,3 +2,4 @@
 .idea
 cmake-build-debug/
 wolf3d
+.DS_Store
