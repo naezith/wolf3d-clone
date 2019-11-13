@@ -54,7 +54,6 @@ int main()
     static std::size_t tex_width = texture.getSize().x;
     static std::size_t tex_height = texture.getSize().y;
 
-    sf::VertexArray pixels(sf::Points, w * h);
     sf::VertexArray lines(sf::Lines, w * 2);
     sf::Clock clock;
     while (window.isOpen()) {
@@ -102,8 +101,6 @@ int main()
             planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
         }
 
-        //pixels.clear();
-        //pixels.resize(w * h);
         for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += 2) {
             //calculate ray position and direction
             double cameraX = 2 * x / double(w) - 1; //x-coordinate in camera space
@@ -174,9 +171,7 @@ int main()
 
             //calculate lowest and highest pixel to fill in current stripe
             int drawStart = -lineHeight / 2 + h / 2;
-            //if (drawStart < 0)drawStart = 0;
             int drawEnd = lineHeight / 2 + h / 2;
-            //if (drawEnd >= h)drawEnd = h - 1;
 
             //calculate value of wallX
             double wallX; //where exactly the wall was hit
@@ -194,27 +189,12 @@ int main()
             lines[idx_vx + 1].texCoords = {float(texX), float(tex_height)};
             lines[idx_vx].position = {float(x), (float) drawStart};
             lines[idx_vx + 1].position = {float(x), (float) drawEnd};
-
-
-            //! Slow method
-            /*for (auto y = drawStart; y < drawEnd; y++) {
-                auto a = y * 256 - h * 128 + lineHeight * 128;
-                auto texY = ((a * tex_height) / lineHeight) / 256;
-                int idx = (w * y + x);
-                pixels[idx].position = sf::Vector2f{float(x), float(y)};
-                pixels[idx].texCoords = sf::Vector2f{float(texX), float(texY)};
-            }*/
         }
 
         // Clear screen
         window.clear(sf::Color::Black);
-
-        //! slow
-        //window.draw(pixels, &texture);
         window.draw(lines, &texture);
         window.display();
-
-        //! slow
     }
     return EXIT_SUCCESS;
 }
