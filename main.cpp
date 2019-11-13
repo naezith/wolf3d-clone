@@ -55,8 +55,9 @@ int main()
     static std::size_t tex_height = 256;
 
     // 2 vertices for a line, 3 lines (ceiling wall floor)
-    int vertice_count_per_column = 2 * 3;
+    int vertice_count_per_column = 2;
     sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
+    sf::VertexArray points(sf::Points);
     sf::Clock clock;
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
@@ -103,6 +104,7 @@ int main()
             planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
         }
 
+        points.clear();
         for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += vertice_count_per_column) {
             //calculate ray position and direction
             double cameraX = 2 * x / double(w) - 1; //x-coordinate in camera space
@@ -227,47 +229,6 @@ int main()
             distWall = perpWallDist;
             distPlayer = 0.0;
 
-
-            double top_currentDist = h / (2.0 * (drawEnd + 1) - h);
-            double bottom_currentDist = h / (2.0 * (h - 1) - h);
-            double top_weight = (top_currentDist - distPlayer) / (distWall - distPlayer);
-            double bottom_weight = (bottom_currentDist - distPlayer) / (distWall - distPlayer);
-            double top_floorX = top_weight * floorXWall + (1.0 - top_weight) * posX;
-            double top_floorY = top_weight * floorYWall + (1.0 - top_weight) * posY;
-            std::cout << h << " " << drawEnd << " " << top_currentDist << "  " << bottom_currentDist <<
-                        " topw: " << top_weight << " bottomw: " << bottom_weight <<
-                        " topFX: " << top_floorX << "  topFY: " << top_floorY <<
-             std::endl;
-            double bottom_floorX = bottom_weight * floorXWall + (1.0 - bottom_weight) * posX;
-            double bottom_floorY = bottom_weight * floorYWall + (1.0 - bottom_weight) * posY;
-
-            int top_floorTexX = int(top_floorX * tex_width) % tex_width;
-            int top_floorTexY = int(top_floorY * tex_height) % tex_height;
-            int bottom_floorTexX = int(bottom_floorX * tex_width) % tex_width;
-            int bottom_floorTexY = int(bottom_floorY * tex_height) % tex_height;
-
-            // Prepare floor line
-            {
-                sf::Vector2f offset{(float)floor_texture_index.x * tex_width, (float)floor_texture_index.y * tex_height};
-                //std::cout << top_floorX << "  " << top_floorY << std::endl;
-                lines[idx_vx + 2].texCoords = offset + sf::Vector2f{float(top_floorTexX), float(top_floorTexY)};
-                lines[idx_vx + 3].texCoords = offset + sf::Vector2f{float(bottom_floorTexX), float(bottom_floorTexY)};
-                lines[idx_vx + 2].position = {float(x), (float) drawEnd + 1};
-                lines[idx_vx + 3].position = {float(x), (float) h};
-            }
-
-            // Prepare ceiling line
-            {
-                sf::Vector2f offset{(float)ceiling_texture_index.x * tex_width, (float)ceiling_texture_index.y * tex_height};
-                //std::cout << top_floorX << "  " << top_floorY << std::endl;
-                lines[idx_vx + 4].texCoords = offset + sf::Vector2f{float(top_floorTexX), float(top_floorTexY)};
-                lines[idx_vx + 5].texCoords = offset + sf::Vector2f{float(bottom_floorTexX), float(bottom_floorTexY)};
-                lines[idx_vx + 4].position = {float(x), (float) 0};
-                lines[idx_vx + 5].position = {float(x), (float) h - (drawEnd + 1)};
-            }
-
-
-
             //draw the floor from drawEnd to the bottom of the screen
             for(int y = drawEnd + 1; y < h; y++)
             {
@@ -280,13 +241,16 @@ int main()
                 floorTexX = int(currentFloorX * tex_width) % tex_width;
                 floorTexY = int(currentFloorY * tex_height) % tex_height;
 
-                //buffer[y][x] = (texture[3][tex_width * floorTexY + floorTexX] >> 1) & 8355711;
-                //buffer[h - y][x] = texture[6][tex_width * floorTexY + floorTexX];
+                // Prepare floor
+                sf::Vector2f offset{(float)floor_texture_index.x * tex_width, (float)floor_texture_index.y * tex_height};
+                sf::Vertex vertex({ (float)x, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
+                points.append(vertex);
             }
         }
 
         // Clear screen
         window.clear(sf::Color::Black);
+        window.draw(points, &texture);
         window.draw(lines, &texture);
         window.display();
     }
