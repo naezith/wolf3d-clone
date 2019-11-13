@@ -191,7 +191,7 @@ int main()
 
             // Prepare wall line
             {
-                sf::Vector2f offset{(float)wall_texture_index.x * tex_width, (float)wall_texture_index.y * tex_height};
+                sf::Vector2f offset{(float)wall_texture_index.x * (tex_width + 2) + 1, (float)wall_texture_index.y * (tex_height + 2) + 1};
                 lines[idx_vx + 0].texCoords = offset + sf::Vector2f{float(texX), 0};
                 lines[idx_vx + 1].texCoords = offset + sf::Vector2f{float(texX), (float)tex_height};
                 lines[idx_vx + 0].position = {float(x), (float) drawStart};
@@ -243,14 +243,14 @@ int main()
 
                 // Prepare floor
                 {
-                    sf::Vector2f offset{(float)floor_texture_index.x * tex_width, (float)floor_texture_index.y * tex_height};
+                    sf::Vector2f offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
                     sf::Vertex vertex({ (float)x - 1, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
                     points.append(vertex);
                 }
 
                 // Prepare ceiling
                 {
-                    sf::Vector2f offset{(float)ceiling_texture_index.x * tex_width, (float)ceiling_texture_index.y * tex_height};
+                    sf::Vector2f offset{(float)ceiling_texture_index.x * (tex_width + 2) + 1, (float)ceiling_texture_index.y * (tex_height + 2) + 1};
                     sf::Vertex vertex({ (float)x - 1, (float)h - y + 1 }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
                     points.append(vertex);
                 }
