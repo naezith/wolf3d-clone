@@ -41,6 +41,20 @@ static double planeX = 0, planeY = 1.03; //the 2d raycaster version of camera pl
 static const int w = 1280;
 static const int h = 720;
 
+struct line_info {
+    int screen_x = -1;
+    int draw_start = -1;
+    int draw_end = -1;
+    int texture_x = -1;
+    int mapX = -1;
+    int mapY = -1;
+    int side = -1;
+};
+
+struct square_info {
+    line_info first_line;
+    line_info last_line;
+};
 
 int main()
 {
@@ -51,14 +65,15 @@ int main()
     sf::Image image;
     image.loadFromFile("another_wall.png");
     texture.loadFromFile("banner.png");
-    static std::size_t tex_width = texture.getSize().x;
-    static std::size_t tex_height = texture.getSize().y;
+    static std::size_t tex_width = texture.getSize().x - 1;
+    static std::size_t tex_height = texture.getSize().y - 1;
 
     sf::VertexArray lines(sf::Lines, w * 2);
     sf::Clock clock;
+    bool printed_tex = false;
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
-        std::cout <<  1 / elapsed.asSeconds() << std::endl;
+        //std::cout <<  1 / elapsed.asSeconds() << std::endl;
         // Process events
         sf::Event event{};
         while (window.pollEvent(event)) {
@@ -100,6 +115,10 @@ int main()
             planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
             planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
         }
+
+
+        std::vector<square_info> squares;
+        line_info previous_line{};
 
         for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += 2) {
             //calculate ray position and direction
@@ -184,16 +203,78 @@ int main()
             if (side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
             if (side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
 
+            if(!printed_tex) std::cout << "TexX: " << texX << " side: " << side << " line_height: " << lineHeight << " mapX: " << mapX << " mapY: " << mapY << std::endl;
 
-            lines[idx_vx].texCoords = {float(texX), 0};
-            lines[idx_vx + 1].texCoords = {float(texX), float(tex_height)};
-            lines[idx_vx].position = {float(x), (float) drawStart};
-            lines[idx_vx + 1].position = {float(x), (float) drawEnd};
+            line_info this_line{x, drawStart, drawEnd, texX, mapX, mapY, side};
+
+            // Identify squares
+            // If did not start yet, current as last
+            if(previous_line.mapX == -1) {
+                if(!printed_tex) std::cout << "New box at " << x << std::endl;
+
+                // Fill only the first line, last is unknown
+                squares.push_back(square_info{this_line});
+            }
+            // If started, and this one is lower than the last one, then it's a new square
+            else if(mapX != previous_line.mapX || mapY != previous_line.mapY || side != previous_line.side) {
+                if(!printed_tex) std::cout << "Box ended at " << previous_line.screen_x << std::endl;
+                square_info& current_square = squares.back();
+
+                // Previous was the last one, set it
+                current_square.last_line = previous_line;
+
+                // Set this line as first line of a new square
+                squares.push_back(square_info{this_line});
+            }
+
+
+            // Save this line as previous
+            previous_line = this_line;
         }
+
+        // End the last square
+        squares.back().last_line = previous_line;
+
+        if(!printed_tex) std::cout << squares.size() << std::endl;
+
+        // Prepare Quads
+        sf::VertexArray quads(sf::Quads, squares.size() * 4);
+        for(std::size_t i = 0; i < squares.size(); ++i) {
+            square_info& sq = squares[i];
+            int idx = i * 4;
+
+            if(!printed_tex) std::cout << "<<< Square: " <<
+                      "\n first_line" <<
+                      "\n -- screen_x: " << sq.first_line.screen_x <<
+                      "\n -- draw_start: " << sq.first_line.draw_start <<
+                      "\n -- draw_end: " << sq.first_line.draw_end <<
+                      "\n -- texture_x: " << sq.first_line.texture_x <<
+                      "\n last_line" <<
+                      "\n -- screen_x: " << sq.last_line.screen_x <<
+                      "\n -- draw_start: " << sq.last_line.draw_start <<
+                      "\n -- draw_end: " << sq.last_line.draw_end <<
+                      "\n -- texture_x: " << sq.last_line.texture_x << std::endl;
+
+            // Top Left
+            quads[idx + 0].position = {(float)sq.first_line.screen_x, (float) sq.first_line.draw_start};
+            quads[idx + 0].texCoords = {(float)sq.first_line.texture_x, (float) 0};
+            // Top Right
+            quads[idx + 1].position = {(float)sq.last_line.screen_x, (float) sq.last_line.draw_start};
+            quads[idx + 1].texCoords = {(float)sq.last_line.texture_x, (float) 0};
+            // Bottom Right
+            quads[idx + 2].position = {(float)sq.last_line.screen_x, (float) sq.last_line.draw_end};
+            quads[idx + 2].texCoords = {(float)sq.last_line.texture_x, (float) tex_height};
+            // Bottom Left
+            quads[idx + 3].position = {(float)sq.first_line.screen_x, (float) sq.first_line.draw_end};
+            quads[idx + 3].texCoords = {(float)sq.first_line.texture_x, (float) tex_height};
+        }
+
+        if(!printed_tex) std::cout << "Square size: " << squares.size() << std::endl;
+        //printed_tex = true;
 
         // Clear screen
         window.clear(sf::Color::Black);
-        window.draw(lines, &texture);
+        window.draw(quads, &texture);
         window.display();
     }
     return EXIT_SUCCESS;
