@@ -44,12 +44,12 @@ static const int h = 720;
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(w, h), "SFML window");
-    window.setFramerateLimit(60);
     window.setVerticalSyncEnabled(true);
     sf::Texture texture;
+    texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
-    sf::Vector2i floor_texture_index{2, 2};
-    sf::Vector2i ceiling_texture_index{2, 1};
+    sf::Vector2i floor_texture_index{0, 0};
+    sf::Vector2i ceiling_texture_index{2, 2};
     sf::Vector2i wall_texture_index{2, 0};
     static std::size_t tex_width = 256;
     static std::size_t tex_height = 256;
@@ -61,7 +61,7 @@ int main()
     sf::Clock clock;
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
-
+        std::cout << 1 / elapsed.asSeconds() << std::endl;
         // Process events
         sf::Event event{};
         while (window.pollEvent(event)) {
@@ -242,9 +242,18 @@ int main()
                 floorTexY = int(currentFloorY * tex_height) % tex_height;
 
                 // Prepare floor
-                sf::Vector2f offset{(float)floor_texture_index.x * tex_width, (float)floor_texture_index.y * tex_height};
-                sf::Vertex vertex({ (float)x, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
-                points.append(vertex);
+                {
+                    sf::Vector2f offset{(float)floor_texture_index.x * tex_width, (float)floor_texture_index.y * tex_height};
+                    sf::Vertex vertex({ (float)x - 1, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
+                    points.append(vertex);
+                }
+
+                // Prepare ceiling
+                {
+                    sf::Vector2f offset{(float)ceiling_texture_index.x * tex_width, (float)ceiling_texture_index.y * tex_height};
+                    sf::Vertex vertex({ (float)x - 1, (float)h - y + 1 }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
+                    points.append(vertex);
+                }
             }
         }
 
