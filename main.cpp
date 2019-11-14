@@ -350,6 +350,8 @@ int main()
         minimap_rt.clear(sf::Color::Black);
 
         float tile_size = minimap_height / mapWidth;
+        sf::Vector2f minimap_pos_offset{-(float)posY * tile_size, -(float)posX * tile_size};
+        minimap_pos_offset += 0.5f * sf::Vector2f{mapWidth, mapHeight} * tile_size;
         int idx = 0;
         for(int m_x = 0; m_x < mapWidth; ++m_x) {
             for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
@@ -357,10 +359,10 @@ int main()
 
                 auto texture_index = sf::Vector2f{(float)floor_texture_index.x, (float)floor_texture_index.y};
 
-                map_tiles[idx + 0].position = { m_x * tile_size, m_y * tile_size };
-                map_tiles[idx + 1].position = { (m_x + 1) * tile_size, m_y * tile_size };
-                map_tiles[idx + 2].position = { (m_x + 1) * tile_size, (m_y + 1) * tile_size };
-                map_tiles[idx + 3].position = { m_x * tile_size, (m_y + 1) * tile_size };
+                map_tiles[idx + 0].position = minimap_pos_offset + sf::Vector2f{ m_x * tile_size, m_y * tile_size };
+                map_tiles[idx + 1].position = minimap_pos_offset + sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
+                map_tiles[idx + 2].position = minimap_pos_offset + sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                map_tiles[idx + 3].position = minimap_pos_offset + sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
 
                 map_tiles[idx + 0].texCoords = { texture_index.x, texture_index.y };
                 map_tiles[idx + 1].texCoords = { texture_index.x + tex_width, texture_index.y };
