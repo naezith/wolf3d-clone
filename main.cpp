@@ -106,7 +106,10 @@ int main()
     sf::CircleShape minimap_circle(h * 0.125f);
     float minimap_height = minimap_circle.getRadius() * 2;
     minimap_circle.setOrigin(minimap_circle.getRadius(), minimap_circle.getRadius());
-    minimap_rt.create(minimap_height, minimap_height);
+    float minimap_zoom = 0.5f;
+    minimap_rt.create(minimap_height / minimap_zoom, minimap_height / minimap_zoom);
+    minimap_rt.setRepeated(false);
+    minimap_rt.setSmooth(true);
     minimap_circle.setPosition(10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10);
 
 
@@ -351,9 +354,7 @@ int main()
         // Minimap
         minimap_rt.clear(sf::Color::Black);
 
-        float tile_size = minimap_height / mapWidth;
-        sf::Vector2f minimap_pos_offset{-(float)posY * tile_size, -(float)posX * tile_size};
-        minimap_pos_offset += 0.5f * sf::Vector2f{mapWidth, mapHeight} * tile_size;
+        float tile_size = (float)minimap_rt.getSize().y / mapWidth;
         int idx = 0;
         for(int m_x = 0; m_x < mapWidth; ++m_x) {
             for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
@@ -361,10 +362,10 @@ int main()
 
                 auto texture_index = sf::Vector2f{(float)floor_texture_index.x, (float)floor_texture_index.y};
 
-                map_tiles[idx + 0].position = minimap_pos_offset + sf::Vector2f{ m_x * tile_size, m_y * tile_size };
-                map_tiles[idx + 1].position = minimap_pos_offset + sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
-                map_tiles[idx + 2].position = minimap_pos_offset + sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
-                map_tiles[idx + 3].position = minimap_pos_offset + sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
+                map_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
+                map_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
+                map_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                map_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
 
                 map_tiles[idx + 0].texCoords = { texture_index.x, texture_index.y };
                 map_tiles[idx + 1].texCoords = { texture_index.x + tex_width, texture_index.y };
@@ -374,21 +375,39 @@ int main()
                 float darkness = 150;
                 sf::Color color = type == 0 ? sf::Color::White : sf::Color(darkness, darkness, darkness);
 
-                for(int i = 0; i < 4; ++i) map_tiles[idx + i].color = color;
+                for(int i = 0; i < 4; ++i) {
+                    map_tiles[idx + i].color = color;
+                }
             }
         }
+
+
+        sf::Vector2f minimap_rt_size{(float)minimap_rt.getSize().x, (float)minimap_rt.getSize().y};
+
+        sf::Vector2f minimap_pos_offset{-(float)posY * tile_size, -(float)posX * tile_size};
+        minimap_pos_offset += 0.5f * sf::Vector2f{mapWidth, mapHeight} * tile_size;
+        minimap_pos_offset *= -1.0f;
+
+        minimap_circle.setTextureRect({
+                static_cast<int>(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x),
+                static_cast<int>(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y),
+                 static_cast<int>(minimap_zoom * minimap_rt_size.x),
+                 static_cast<int>(minimap_zoom * minimap_rt_size.y)});
+
+
 
         minimap_rt.draw(map_tiles, &texture);
 
         minimap_rt.display();
         window.draw(minimap_circle);
 
-
         // FOV in minimap
         sf::VertexArray minimap_fov{sf::Triangles, 3};
         minimap_fov[0].position = minimap_circle.getPosition();
         float fov_rad = (-fov_degrees * 0.5f + 90.0f)/RAD2DEG;
-        sf::Vector2f fov_vec = sf::Vector2f(cosf(fov_rad), -sinf(fov_rad)) * darkness_distance * tile_size;
+
+        float fov_arm_dist = tile_size * darkness_distance * (minimap_height / minimap_rt.getSize().x) / minimap_zoom;
+        sf::Vector2f fov_vec = sf::Vector2f(cosf(fov_rad), -sinf(fov_rad)) * fov_arm_dist;
         minimap_fov[1].position = minimap_fov[0].position + fov_vec;
         minimap_fov[2].position = minimap_fov[0].position + sf::Vector2f{-fov_vec.x, fov_vec.y};
 
