@@ -97,6 +97,7 @@ int main()
 
     // 2 vertices for a line, 3 lines (ceiling wall floor)
     int vertice_count_per_column = 2;
+    sf::VertexArray map_tiles{sf::Quads, mapWidth * mapHeight * 4};
     sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
     sf::VertexArray points(sf::Points);
     sf::Clock clock;
@@ -325,7 +326,6 @@ int main()
         // Minimap
         minimap_rt.clear(sf::Color::Black);
 
-        sf::VertexArray map_tiles{sf::Quads, mapWidth * mapHeight * 4};
         float tile_size = minimap_height / mapWidth;
         int idx = 0;
         for(int m_x = 0; m_x < mapWidth; ++m_x) {
