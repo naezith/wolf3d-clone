@@ -40,11 +40,26 @@ static double planeX = 0, planeY = 1.03; //the 2d raycaster version of camera pl
 
 static const int w = 1280;
 static const int h = 720;
+static const float mouse_sensitivity = 0.093f;
+
+void moveMouse(float amount, float dt) {
+    double rotSpeed = amount * dt; //the constant value is in radians/second
+
+    //both camera direction and camera plane must be rotated
+    double oldDirX = dirX;
+    dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
+    dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
+    double oldPlaneX = planeX;
+    planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
+    planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+}
 
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(w, h), "SFML window");
     window.setVerticalSyncEnabled(true);
+    window.setMouseCursorVisible(false);
+    window.setMouseCursorGrabbed(true);
     sf::Texture texture;
     texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
@@ -59,6 +74,7 @@ int main()
     sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
     sf::VertexArray points(sf::Points);
     sf::Clock clock;
+
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
         std::cout << 1 / elapsed.asSeconds() << std::endl;
@@ -66,13 +82,23 @@ int main()
         sf::Event event{};
         while (window.pollEvent(event)) {
             // Close window: exit
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed ||
+                    (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
                 window.close();
+        }
+
+        // Mouse
+        {
+            sf::Vector2i pos = sf::Mouse::getPosition(window);
+            sf::Vector2i center{w / 2, h / 2};
+
+            moveMouse(mouse_sensitivity * (pos.x - center.x), elapsed.asSeconds());
+
+            sf::Mouse::setPosition(center, window);
         }
 
         //speed modifiers
         double moveSpeed = elapsed.asSeconds() * 5.0; //the constant value is in squares/second
-        double rotSpeed = elapsed.asSeconds() * 3.0; //the constant value is in radians/second
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
             if (worldMap[int(posX + dirX * moveSpeed)][int(posY)] == 0) posX += dirX * moveSpeed;
@@ -98,23 +124,11 @@ int main()
 
         //rotate to the right
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-            //both camera direction and camera plane must be rotated
-            double oldDirX = dirX;
-            dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
-            dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
-            double oldPlaneX = planeX;
-            planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
-            planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+            moveMouse(3, elapsed.asSeconds());
         }
         //rotate to the left
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-            //both camera direction and camera plane must be rotated
-            double oldDirX = dirX;
-            dirX = dirX * cos(rotSpeed) - dirY * sin(rotSpeed);
-            dirY = oldDirX * sin(rotSpeed) + dirY * cos(rotSpeed);
-            double oldPlaneX = planeX;
-            planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
-            planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+            moveMouse(-3, elapsed.asSeconds());
         }
 
         points.clear();
