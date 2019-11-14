@@ -131,9 +131,22 @@ int main()
     sf::Vector2i floor_texture_index{0, 0};
     sf::Vector2f floor_texture_offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
 
+    // Compass Textures
+    sf::Texture compass_texture;
+    compass_texture.setSmooth(true);
+    compass_texture.loadFromFile("compass.png");
+    sf::Texture compass_inner_shadow_texture;
+    compass_inner_shadow_texture.setSmooth(true);
+    compass_inner_shadow_texture.loadFromFile("compass_inner_shadow.png");
+    sf::Texture compass_ring_texture;
+    compass_ring_texture.setSmooth(true);
+    compass_ring_texture.loadFromFile("compass_ring.png");
+    sf::Texture compass_arrow_texture;
+    compass_arrow_texture.setSmooth(true);
+    compass_arrow_texture.loadFromFile("compass_arrow.png");
 
     sf::RenderTexture minimap_rt;
-    sf::CircleShape minimap_circle(h * 0.125f);
+    sf::CircleShape minimap_circle(compass_inner_shadow_texture.getSize().y / 2);
     float minimap_height = minimap_circle.getRadius() * 2;
     minimap_circle.setOrigin(minimap_circle.getRadius(), minimap_circle.getRadius());
     float minimap_zoom = 0.5f;
@@ -146,6 +159,26 @@ int main()
     float minimap_alpha = 200;
     minimap_circle.setFillColor(sf::Color(255, 255, 255, minimap_alpha));
     minimap_circle.setTexture(&minimap_rt.getTexture());
+
+    // COMPASS
+    sf::Sprite compass(compass_texture);
+    compass.setOrigin(compass_texture.getSize().x / 2, compass_texture.getSize().y / 2);
+    compass.setPosition(minimap_circle.getPosition());
+
+    // Compass ring
+    sf::Sprite compass_ring(compass_ring_texture);
+    compass_ring.setOrigin(compass_ring_texture.getSize().x / 2, compass_ring_texture.getSize().y / 2);
+    compass_ring.setPosition(minimap_circle.getPosition());
+
+    // Compass inner shadow
+    sf::Sprite compass_inner_shadow(compass_inner_shadow_texture);
+    compass_inner_shadow.setOrigin(compass_inner_shadow_texture.getSize().x / 2, compass_inner_shadow_texture.getSize().y / 2);
+    compass_inner_shadow.setPosition(minimap_circle.getPosition());
+
+    // Compass ring
+    sf::Sprite compass_arrow(compass_arrow_texture);
+    compass_arrow.setOrigin(compass_arrow_texture.getSize().x / 2, compass_arrow_texture.getSize().y / 2);
+    compass_arrow.setScale(1.0f, 1.5f);
 
     // 2 vertices for a line, 3 lines (ceiling wall floor)
     int vertice_count_per_column = 2;
@@ -225,6 +258,7 @@ int main()
 
         // Update minimap rotation
         minimap_circle.setRotation(vecToAngle({(float)dirX, (float)dirY}));
+        compass.setRotation(minimap_circle.getRotation());
 
 
         points.clear();
@@ -446,9 +480,19 @@ int main()
         for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
         minimap_rt.draw(minimap_fov);
 
+        // Compass Character arrow
+        compass_arrow.setPosition(minimap_fov[0].position);
+        compass_arrow.setRotation(dir_angle);
+        minimap_rt.draw(compass_arrow);
+
         // Display minimap
         minimap_rt.display();
         window.draw(minimap_circle);
+
+        // Compass
+        window.draw(compass_inner_shadow);
+        window.draw(compass);
+        window.draw(compass_ring);
 
         window.display();
     }
