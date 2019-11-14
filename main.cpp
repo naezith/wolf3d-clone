@@ -74,11 +74,26 @@ int main()
     sf::Texture texture;
     texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
-    sf::Vector2i floor_texture_index{0, 0};
     sf::Vector2i ceiling_texture_index{2, 2};
     sf::Vector2i wall_texture_index{2, 0};
     static std::size_t tex_width = 256;
     static std::size_t tex_height = 256;
+    sf::Vector2i floor_texture_index{0, 0};
+    sf::Vector2f floor_texture_offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
+
+
+    sf::RenderTexture minimap_rt;
+    sf::CircleShape minimap_circle(h * 0.125f);
+    float minimap_height = minimap_circle.getRadius() * 2;
+    minimap_rt.create(minimap_height, minimap_height);
+    minimap_circle.setPosition(10, h - 10 - minimap_circle.getRadius() * 2);
+
+
+    minimap_circle.setOutlineThickness(2);
+    float minimap_alpha = 200;
+    minimap_circle.setFillColor(sf::Color(255, 255, 255, minimap_alpha));
+    minimap_circle.setOutlineColor(sf::Color(0, 0, 0, 200));
+    minimap_circle.setTexture(&minimap_rt.getTexture());
 
     // 2 vertices for a line, 3 lines (ceiling wall floor)
     int vertice_count_per_column = 2;
@@ -295,8 +310,7 @@ int main()
 
                 // Prepare floor
                 {
-                    sf::Vector2f offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
-                    sf::Vertex vertex({ (float)x - 1, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
+                    sf::Vertex vertex({ (float)x - 1, (float)y }, floor_texture_offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
                     setBrightness(vertex, currentDist, darkness_distance);
                     points.append(vertex);
                 }
@@ -307,6 +321,45 @@ int main()
         window.clear(sf::Color::Black);
         window.draw(points, &texture);
         window.draw(lines, &texture);
+
+        // Minimap
+        minimap_rt.clear(sf::Color::Black);
+
+        sf::VertexArray map_tiles{sf::Quads, mapWidth * mapHeight * 4};
+        float tile_size = minimap_height / mapWidth;
+        int idx = 0;
+        for(int m_x = 0; m_x < mapWidth; ++m_x) {
+            for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
+                int type = worldMap[m_y][m_x];
+
+                auto texture_index = sf::Vector2f{(float)floor_texture_index.x, (float)floor_texture_index.y};
+
+                map_tiles[idx + 0].position = { m_x * tile_size, m_y * tile_size };
+                map_tiles[idx + 1].position = { (m_x + 1) * tile_size, m_y * tile_size };
+                map_tiles[idx + 2].position = { (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                map_tiles[idx + 3].position = { m_x * tile_size, (m_y + 1) * tile_size };
+
+                map_tiles[idx + 0].texCoords = { texture_index.x, texture_index.y };
+                map_tiles[idx + 1].texCoords = { texture_index.x + tex_width, texture_index.y };
+                map_tiles[idx + 2].texCoords = { texture_index.x + tex_width, texture_index.y + tex_height };
+                map_tiles[idx + 3].texCoords = { texture_index.x, texture_index.y + tex_height };
+
+                float darkness = 150;
+                sf::Color color = type == 0 ? sf::Color::White : sf::Color(darkness, darkness, darkness);
+
+                for(int i = 0; i < 4; ++i) map_tiles[idx + i].color = color;
+            }
+        }
+
+        minimap_rt.draw(map_tiles, &texture);
+        minimap_rt.display();
+
+        window.draw(minimap_circle);
+
+        sf::Sprite spr(minimap_rt.getTexture());
+        window.draw(spr);
+
+
         window.display();
     }
     return EXIT_SUCCESS;
