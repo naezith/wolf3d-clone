@@ -83,6 +83,19 @@ int main()
             if (worldMap[int(posX - dirX * moveSpeed)][int(posY)] == 0) posX -= dirX * moveSpeed;
             if (worldMap[int(posX)][int(posY - dirY * moveSpeed)] == 0) posY -= dirY * moveSpeed;
         }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+            sf::Vector2f right_vector{(float)dirY, -(float)dirX};
+            if (worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
+            if (worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+            sf::Vector2f right_vector{(float)-dirY, (float)dirX};
+            if (worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
+            if (worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
+        }
+
         //rotate to the right
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
             //both camera direction and camera plane must be rotated
