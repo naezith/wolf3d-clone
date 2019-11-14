@@ -85,9 +85,11 @@ int main()
     sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
     sf::VertexArray points(sf::Points);
     sf::Clock clock;
-
+    sf::Time total_time;
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
+        total_time += elapsed;
+
         //std::cout << 1 / elapsed.asSeconds() << std::endl;
         // Process events
         sf::Event event{};
@@ -153,6 +155,7 @@ int main()
 
             double rayDirX = dirX + planeX * cameraX;
             double rayDirY = dirY + planeY * cameraX;
+
             //which box of the map we're in
             int mapX = int(posX);
             int mapY = int(posY);
