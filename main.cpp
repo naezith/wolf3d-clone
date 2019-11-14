@@ -36,7 +36,9 @@ static int worldMap[mapWidth][mapHeight] =
 
 static double posX = 22, posY = 12;  //x and y start position
 static double dirX = -1, dirY = 0; //initial direction vector
-static double planeX = 0, planeY = 1.03; //the 2d raycaster version of camera plane
+static double fov_degrees = 103;
+static double fov = fov_degrees / 100.0;
+static double planeX = 0, planeY = fov; //the 2d raycaster version of camera plane
 
 static const int w = 1280;
 static const int h = 720;
@@ -377,8 +379,25 @@ int main()
         }
 
         minimap_rt.draw(map_tiles, &texture);
+
         minimap_rt.display();
         window.draw(minimap_circle);
+
+
+        // FOV in minimap
+        sf::VertexArray minimap_fov{sf::Triangles, 3};
+        minimap_fov[0].position = minimap_circle.getPosition();
+        float fov_rad = (-(fov_degrees * 0.5f) + 90.0f)/RAD2DEG;
+        sf::Vector2f fov_vec = sf::Vector2f(cosf(fov_rad), -sinf(fov_rad)) * darkness_distance * tile_size;
+        minimap_fov[1].position = minimap_fov[0].position + fov_vec;
+        minimap_fov[2].position = minimap_fov[0].position + sf::Vector2f{-fov_vec.x, fov_vec.y};
+
+        sf::Color fov_color = sf::Color(255, 255, 255, 60);
+        minimap_fov[0].color = fov_color;
+
+        fov_color.a = 0;
+        for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
+        window.draw(minimap_fov);
 
         window.display();
     }
