@@ -6,6 +6,14 @@
 #define mapWidth 24
 #define mapHeight 24
 
+static sf::Vector2i wall_texture_indexes[] = {
+    sf::Vector2i{0, 0}, // 0
+    sf::Vector2i{2, 0}, // 1
+    sf::Vector2i{3, 2}, // 2
+    sf::Vector2i{0, 2}, // 3
+    sf::Vector2i{1, 0}, // 4
+    sf::Vector2i{1, 1}, // 4
+};
 static int worldMap[mapWidth][mapHeight] =
         {
                 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -95,7 +103,6 @@ int main()
     texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
     sf::Vector2i ceiling_texture_index{2, 2};
-    sf::Vector2i wall_texture_index{2, 0};
     static std::size_t tex_width = 256;
     static std::size_t tex_height = 256;
     sf::Vector2i floor_texture_index{0, 0};
@@ -287,7 +294,8 @@ int main()
 
             // Prepare wall line
             {
-                sf::Vector2f offset{(float)wall_texture_index.x * (tex_width + 2) + 1, (float)wall_texture_index.y * (tex_height + 2) + 1};
+                auto tex_idx = wall_texture_indexes[worldMap[mapX][mapY]];
+                sf::Vector2f offset{(float)tex_idx.x * (tex_width + 2) + 1, (float)tex_idx.y * (tex_height + 2) + 1};
                 lines[idx_vx + 0].texCoords = offset + sf::Vector2f{float(texX), 0};
                 lines[idx_vx + 1].texCoords = offset + sf::Vector2f{float(texX), (float)tex_height};
                 lines[idx_vx + 0].position = {float(x), (float) drawStart};
