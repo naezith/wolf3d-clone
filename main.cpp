@@ -40,7 +40,7 @@ static double planeX = 0, planeY = 1.03; //the 2d raycaster version of camera pl
 
 static const int w = 1280;
 static const int h = 720;
-static const float mouse_sensitivity = 0.1f;
+static const float mouse_sensitivity = 0.3f;
 
 static float magnitude(const sf::Vector2f& a) {
     return sqrt(a.x * a.x + a.y * a.y);
@@ -85,10 +85,11 @@ int main()
     sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
     sf::VertexArray points(sf::Points);
     sf::Clock clock;
-    sf::Time total_time;
+    sf::Time bobbing_timer;
+    sf::Time total_timer;
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
-        total_time += elapsed;
+        total_timer += elapsed;
 
         //std::cout << 1 / elapsed.asSeconds() << std::endl;
         // Process events
@@ -114,7 +115,13 @@ int main()
                                (float)(sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
                                          (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
 
+        // If moving diagonally
         if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
+
+        // If moving
+        bool moving = input_dir.x != 0 || input_dir.y != 0;
+        if(moving) bobbing_timer += elapsed;
+        double y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * bobbing_timer.asSeconds() + 2.0f * total_timer.asSeconds());
 
         // Forward
         if (input_dir.y > 0) {
@@ -216,11 +223,11 @@ int main()
             }
 
             //Calculate height of line to draw on screen
-            int lineHeight = std::abs((int) (h / perpWallDist));
+            double lineHeight = std::abs(h / perpWallDist);
 
             //calculate lowest and highest pixel to fill in current stripe
-            int drawStart = -lineHeight / 2 + h / 2;
-            int drawEnd = lineHeight / 2 + h / 2;
+            double drawStart = y_offset - lineHeight / 2 + h / 2;
+            double drawEnd = y_offset + lineHeight / 2 + h / 2;
 
             //calculate value of wallX
             double wallX; //where exactly the wall was hit
@@ -277,7 +284,7 @@ int main()
             //draw the floor from drawEnd to the bottom of the screen
             for(int y = drawEnd + 1; y < h; y++)
             {
-                double currentDist = h / (2.0 * y - h); //you could make a small lookup table for this instead
+                double currentDist = h / (2.0 * (y - y_offset) - h); //you could make a small lookup table for this instead
                 double weight = currentDist / perpWallDist;
                 double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
                 double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
@@ -290,14 +297,6 @@ int main()
                 {
                     sf::Vector2f offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
                     sf::Vertex vertex({ (float)x - 1, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
-                    setBrightness(vertex, currentDist, darkness_distance);
-                    points.append(vertex);
-                }
-
-                // Prepare ceiling
-                {
-                    sf::Vector2f offset{(float)ceiling_texture_index.x * (tex_width + 2) + 1, (float)ceiling_texture_index.y * (tex_height + 2) + 1};
-                    sf::Vertex vertex({ (float)x - 1, (float)h - y + 1 }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
                     setBrightness(vertex, currentDist, darkness_distance);
                     points.append(vertex);
                 }
