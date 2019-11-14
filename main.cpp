@@ -78,9 +78,9 @@ void moveMouse(float amount, float dt) {
 
 float darkness_distance = 8.0f;
 void setBrightness(sf::Vertex& v, float distance, float max_distance) {
-    float darkness = std::max(std::min(255.0f * (float)distance / max_distance, 255.0f), 0.0f);
-    float brightness = 255.0f - darkness;
-    v.color = sf::Color(brightness, brightness, brightness);
+    const float max_brightness = 90.0f;
+    float darkness = std::max(std::min(max_brightness * (float)distance / (max_distance), max_brightness), 0.0f);
+    float brightness = max_brightness - darkness;
     v.color = sf::Color(brightness, brightness, brightness);
 }
 
@@ -378,12 +378,7 @@ int main()
 
         minimap_rt.draw(map_tiles, &texture);
         minimap_rt.display();
-
         window.draw(minimap_circle);
-
-        sf::Sprite spr(minimap_rt.getTexture());
-        window.draw(spr);
-
 
         window.display();
     }
