@@ -419,13 +419,12 @@ int main()
         minimap_pos_offset += 0.5f * sf::Vector2f{mapWidth, mapHeight} * tile_size;
         minimap_pos_offset *= -1.0f;
 
+        sf::Vector2i minimap_rect_size{static_cast<int>(minimap_zoom * minimap_rt_size.x), static_cast<int>(minimap_zoom * minimap_rt_size.y)};
         minimap_circle.setTextureRect({
-                static_cast<int>(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x),
-                static_cast<int>(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y),
-                 static_cast<int>(minimap_zoom * minimap_rt_size.x),
-                 static_cast<int>(minimap_zoom * minimap_rt_size.y)});
-
-
+                std::min(std::max(static_cast<int>(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x), 0),
+                         static_cast<int>(minimap_rt_size.x - minimap_rect_size.x)),
+                         std::min(std::max(static_cast<int>(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y), 0), static_cast<int>(minimap_rt_size.y - minimap_rect_size.y)),
+                                  minimap_rect_size.x, minimap_rect_size.y});
 
         minimap_rt.draw(map_tiles, &texture);
 
