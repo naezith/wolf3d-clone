@@ -46,6 +46,24 @@ static float magnitude(const sf::Vector2f& a) {
     return sqrt(a.x * a.x + a.y * a.y);
 }
 
+constexpr float RAD2DEG = 57.295779513082320876798154814105f;
+static float vecToAngle(const sf::Vector2f& vec){
+    if(vec.x == 0.0f && vec.y == 0.0f) return 0.0f;
+    float absx = std::abs(vec.x), absy = std::abs(vec.y);
+    double a = absx > absy ? absy/absx : absx/absy;
+    double s = a * a;
+    double r = ((-0.0464964749 * s + 0.15931422) * s - 0.327622764) * s * a + a;
+
+    if(absy > absx) r = 1.57079637 - r;
+    if(vec.x < 0) r = 3.14159274 - r;
+    if(vec.y < 0) r = -r;
+
+    double ang = r*RAD2DEG + 90.0;
+    if(ang < 0.0f) ang += 360.0;
+    else if(ang > 360.0f) ang -= 360.0;
+    return ang;
+}
+
 void moveMouse(float amount, float dt) {
     double rotSpeed = amount * dt; //the constant value is in radians/second
 
@@ -85,8 +103,9 @@ int main()
     sf::RenderTexture minimap_rt;
     sf::CircleShape minimap_circle(h * 0.125f);
     float minimap_height = minimap_circle.getRadius() * 2;
+    minimap_circle.setOrigin(minimap_circle.getRadius(), minimap_circle.getRadius());
     minimap_rt.create(minimap_height, minimap_height);
-    minimap_circle.setPosition(10, h - 10 - minimap_circle.getRadius() * 2);
+    minimap_circle.setPosition(10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10);
 
 
     minimap_circle.setOutlineThickness(2);
@@ -170,6 +189,10 @@ int main()
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
             moveMouse(-3, elapsed.asSeconds());
         }
+
+        // Update minimap rotation
+        minimap_circle.setRotation(90 + vecToAngle({(float)dirX, (float)dirY}));
+
 
         points.clear();
         for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += vertice_count_per_column) {
