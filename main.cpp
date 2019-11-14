@@ -387,7 +387,7 @@ int main()
         // FOV in minimap
         sf::VertexArray minimap_fov{sf::Triangles, 3};
         minimap_fov[0].position = minimap_circle.getPosition();
-        float fov_rad = (-(fov_degrees * 0.5f) + 90.0f)/RAD2DEG;
+        float fov_rad = (-fov_degrees * 0.5f + 90.0f)/RAD2DEG;
         sf::Vector2f fov_vec = sf::Vector2f(cosf(fov_rad), -sinf(fov_rad)) * darkness_distance * tile_size;
         minimap_fov[1].position = minimap_fov[0].position + fov_vec;
         minimap_fov[2].position = minimap_fov[0].position + sf::Vector2f{-fov_vec.x, fov_vec.y};
