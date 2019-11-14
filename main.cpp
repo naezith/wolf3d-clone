@@ -143,10 +143,8 @@ int main()
     minimap_circle.setPosition(10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10);
 
 
-    minimap_circle.setOutlineThickness(2);
     float minimap_alpha = 200;
     minimap_circle.setFillColor(sf::Color(255, 255, 255, minimap_alpha));
-    minimap_circle.setOutlineColor(sf::Color(0, 0, 0, 200));
     minimap_circle.setTexture(&minimap_rt.getTexture());
 
     // 2 vertices for a line, 3 lines (ceiling wall floor)
@@ -420,6 +418,7 @@ int main()
         minimap_pos_offset *= -1.0f;
 
         sf::Vector2i minimap_rect_size{static_cast<int>(minimap_zoom * minimap_rt_size.x), static_cast<int>(minimap_zoom * minimap_rt_size.y)};
+        // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
         minimap_circle.setTextureRect({
                 std::min(std::max(static_cast<int>(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x), 0),
                          static_cast<int>(minimap_rt_size.x - minimap_rect_size.x)),
@@ -450,7 +449,6 @@ int main()
         // Display minimap
         minimap_rt.display();
         window.draw(minimap_circle);
-
 
         window.display();
     }
