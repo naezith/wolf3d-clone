@@ -42,6 +42,30 @@ static int worldMap[mapWidth][mapHeight] =
                 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
         };
 
+
+static const sf::Vector2f UNIT_UP(0, -1);
+static const sf::Vector2f UNIT_UP_RIGHT(1, -1);
+static const sf::Vector2f UNIT_UP_LEFT(-1, -1);
+static const sf::Vector2f UNIT_DOWN(0, 1);
+static const sf::Vector2f UNIT_DOWN_RIGHT(1, 1);
+static const sf::Vector2f UNIT_DOWN_LEFT(-1, 1);
+static const sf::Vector2f UNIT_RIGHT(1, 0);
+static const sf::Vector2f UNIT_LEFT(-1, 0);
+constexpr float RAD2DEG = 57.295779513082320876798154814105f;
+static sf::Vector2f angleToVec(const float& degree) {
+    if(degree == 180) return UNIT_DOWN;
+    if(degree == 90) return UNIT_RIGHT;
+    if(degree == 270) return UNIT_LEFT;
+    if(degree == 0 || degree == 360) return UNIT_UP;
+    if(degree == 45) return UNIT_UP_RIGHT;
+    if(degree == 135) return UNIT_DOWN_RIGHT;
+    if(degree == 225) return UNIT_DOWN_LEFT;
+    if(degree == 315) return UNIT_UP_LEFT;
+
+    float rad = (-degree + 90.0f)/RAD2DEG;
+    return sf::Vector2f(cosf(rad), -sinf(rad));
+}
+
 static double posX = 22, posY = 12;  //x and y start position
 static double dirX = -1, dirY = 0; //initial direction vector
 static double fov_degrees = 103;
@@ -56,7 +80,6 @@ static float magnitude(const sf::Vector2f& a) {
     return sqrt(a.x * a.x + a.y * a.y);
 }
 
-constexpr float RAD2DEG = 57.295779513082320876798154814105f;
 static float vecToAngle(const sf::Vector2f& vec){
     if(vec.x == 0.0f && vec.y == 0.0f) return 0.0f;
     float absx = std::abs(vec.x), absy = std::abs(vec.y);
@@ -71,7 +94,7 @@ static float vecToAngle(const sf::Vector2f& vec){
     double ang = r*RAD2DEG + 90.0;
     if(ang < 0.0f) ang += 360.0;
     else if(ang > 360.0f) ang -= 360.0;
-    return ang;
+    return ang + 90;
 }
 
 void moveMouse(float amount, float dt) {
@@ -203,7 +226,7 @@ int main()
         }
 
         // Update minimap rotation
-        minimap_circle.setRotation(90 + vecToAngle({(float)dirX, (float)dirY}));
+        minimap_circle.setRotation(vecToAngle({(float)dirX, (float)dirY}));
 
 
         points.clear();
@@ -406,25 +429,29 @@ int main()
 
         minimap_rt.draw(map_tiles, &texture);
 
-        minimap_rt.display();
-        window.draw(minimap_circle);
-
         // FOV in minimap
         sf::VertexArray minimap_fov{sf::Triangles, 3};
-        minimap_fov[0].position = minimap_circle.getPosition();
-        float fov_rad = (-fov_degrees * 0.5f + 90.0f)/RAD2DEG;
-
         float fov_arm_dist = tile_size * darkness_distance * (minimap_height / minimap_rt.getSize().x) / minimap_zoom;
-        sf::Vector2f fov_vec = sf::Vector2f(cosf(fov_rad), -sinf(fov_rad)) * fov_arm_dist;
-        minimap_fov[1].position = minimap_fov[0].position + fov_vec;
-        minimap_fov[2].position = minimap_fov[0].position + sf::Vector2f{-fov_vec.x, fov_vec.y};
+        float dir_angle = -vecToAngle({(float)dirX, (float)dirY});
+        sf::Vector2f left_fov_vec = angleToVec(dir_angle - fov_degrees * 0.5f) * fov_arm_dist;
+        sf::Vector2f right_fov_vec = angleToVec(dir_angle + fov_degrees * 0.5f) * fov_arm_dist;
+
+        minimap_fov[0].position = sf::Vector2f{(float)posY * tile_size, (float)posX * tile_size};
+
+        minimap_fov[1].position = minimap_fov[0].position + left_fov_vec;
+        minimap_fov[2].position = minimap_fov[0].position + right_fov_vec;
 
         sf::Color fov_color = sf::Color(255, 255, 255, 60);
         minimap_fov[0].color = fov_color;
 
         fov_color.a = 0;
         for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
-        window.draw(minimap_fov);
+        minimap_rt.draw(minimap_fov);
+
+        // Display minimap
+        minimap_rt.display();
+        window.draw(minimap_circle);
+
 
         window.display();
     }
