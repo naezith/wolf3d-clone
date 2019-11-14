@@ -42,6 +42,10 @@ static const int w = 1280;
 static const int h = 720;
 static const float mouse_sensitivity = 0.1f;
 
+static float magnitude(const sf::Vector2f& a) {
+    return sqrt(a.x * a.x + a.y * a.y);
+}
+
 void moveMouse(float amount, float dt) {
     double rotSpeed = amount * dt; //the constant value is in radians/second
 
@@ -52,6 +56,14 @@ void moveMouse(float amount, float dt) {
     double oldPlaneX = planeX;
     planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
     planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+}
+
+float darkness_distance = 8.0f;
+void setBrightness(sf::Vertex& v, float distance, float max_distance) {
+    float darkness = std::max(std::min(255.0f * (float)distance / max_distance, 255.0f), 0.0f);
+    float brightness = 255.0f - darkness;
+    v.color = sf::Color(brightness, brightness, brightness);
+    v.color = sf::Color(brightness, brightness, brightness);
 }
 
 int main()
@@ -226,6 +238,11 @@ int main()
                 lines[idx_vx + 1].texCoords = offset + sf::Vector2f{float(texX), (float)tex_height};
                 lines[idx_vx + 0].position = {float(x), (float) drawStart};
                 lines[idx_vx + 1].position = {float(x), (float) drawEnd};
+
+                // Brightness
+                float distance = magnitude(sf::Vector2f(mapX - posX + (side == 1 ? wallX : 0), mapY - posY + (side == 0 ? wallX : 0)));
+                setBrightness(lines[idx_vx + 0], distance, darkness_distance);
+                setBrightness(lines[idx_vx + 1], distance, darkness_distance);
             }
 
 
@@ -254,16 +271,11 @@ int main()
                 floorYWall = mapY + 1.0;
             }
 
-            double distWall, distPlayer;
-
-            distWall = perpWallDist;
-            distPlayer = 0.0;
-
             //draw the floor from drawEnd to the bottom of the screen
             for(int y = drawEnd + 1; y < h; y++)
             {
                 double currentDist = h / (2.0 * y - h); //you could make a small lookup table for this instead
-                double weight = (currentDist - distPlayer) / (distWall - distPlayer);
+                double weight = currentDist / perpWallDist;
                 double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
                 double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
 
@@ -275,6 +287,7 @@ int main()
                 {
                     sf::Vector2f offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
                     sf::Vertex vertex({ (float)x - 1, (float)y }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
+                    setBrightness(vertex, currentDist, darkness_distance);
                     points.append(vertex);
                 }
 
@@ -282,6 +295,7 @@ int main()
                 {
                     sf::Vector2f offset{(float)ceiling_texture_index.x * (tex_width + 2) + 1, (float)ceiling_texture_index.y * (tex_height + 2) + 1};
                     sf::Vertex vertex({ (float)x - 1, (float)h - y + 1 }, offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
+                    setBrightness(vertex, currentDist, darkness_distance);
                     points.append(vertex);
                 }
             }
