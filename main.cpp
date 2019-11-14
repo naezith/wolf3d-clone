@@ -40,7 +40,7 @@ static double planeX = 0, planeY = 1.03; //the 2d raycaster version of camera pl
 
 static const int w = 1280;
 static const int h = 720;
-static const float mouse_sensitivity = 0.093f;
+static const float mouse_sensitivity = 0.1f;
 
 void moveMouse(float amount, float dt) {
     double rotSpeed = amount * dt; //the constant value is in radians/second
@@ -57,7 +57,6 @@ void moveMouse(float amount, float dt) {
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(w, h), "SFML window");
-    window.setVerticalSyncEnabled(true);
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
     sf::Texture texture;
@@ -77,7 +76,7 @@ int main()
 
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
-        std::cout << 1 / elapsed.asSeconds() << std::endl;
+        //std::cout << 1 / elapsed.asSeconds() << std::endl;
         // Process events
         sf::Event event{};
         while (window.pollEvent(event)) {
@@ -91,32 +90,36 @@ int main()
         {
             sf::Vector2i pos = sf::Mouse::getPosition(window);
             sf::Vector2i center{w / 2, h / 2};
-
             moveMouse(mouse_sensitivity * (pos.x - center.x), elapsed.asSeconds());
-
-            sf::Mouse::setPosition(center, window);
+            sf::Mouse::setPosition({w / 2, h / 2}, window);
         }
-
         //speed modifiers
         double moveSpeed = elapsed.asSeconds() * 5.0; //the constant value is in squares/second
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+        sf::Vector2f input_dir{(float)(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
+                               (float)(sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
+                                         (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
+
+        if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
+
+        // Forward
+        if (input_dir.y > 0) {
             if (worldMap[int(posX + dirX * moveSpeed)][int(posY)] == 0) posX += dirX * moveSpeed;
             if (worldMap[int(posX)][int(posY + dirY * moveSpeed)] == 0) posY += dirY * moveSpeed;
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+        if (input_dir.y < 0) {
             if (worldMap[int(posX - dirX * moveSpeed)][int(posY)] == 0) posX -= dirX * moveSpeed;
             if (worldMap[int(posX)][int(posY - dirY * moveSpeed)] == 0) posY -= dirY * moveSpeed;
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+        if (input_dir.x > 0) {
             sf::Vector2f right_vector{(float)dirY, -(float)dirX};
             if (worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
             if (worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+        if (input_dir.x < 0) {
             sf::Vector2f right_vector{(float)-dirY, (float)dirX};
             if (worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
             if (worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
