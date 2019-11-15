@@ -169,6 +169,7 @@ int main()
     sf::Sprite compass_ring(compass_ring_texture);
     compass_ring.setOrigin(compass_ring_texture.getSize().x / 2, compass_ring_texture.getSize().y / 2);
     compass_ring.setPosition(minimap_circle.getPosition());
+    compass_ring.setColor(sf::Color(70, 70, 70));
 
     // Compass inner shadow
     sf::Sprite compass_inner_shadow(compass_inner_shadow_texture);
