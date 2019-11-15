@@ -200,16 +200,16 @@ int main()
     sf::Clock clock;
     sf::Time bobbing_timer;
     sf::Time total_timer;
-    while (window.isOpen()) {
+    while(window.isOpen()) {
         sf::Time elapsed = clock.restart();
         total_timer += elapsed;
 
         //std::cout << 1 / elapsed.asSeconds() << std::endl;
         // Process events
         sf::Event event{};
-        while (window.pollEvent(event)) {
+        while(window.pollEvent(event)) {
             // Close window: exit
-            if (event.type == sf::Event::Closed ||
+            if(event.type == sf::Event::Closed ||
                     (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
                 window.close();
         }
@@ -224,9 +224,9 @@ int main()
         //speed modifiers
         double moveSpeed = elapsed.asSeconds() * 5.0; //the constant value is in squares/second
 
-        sf::Vector2f input_dir{(float)(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
-                               (float)(sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
-                                         (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
+        sf::Vector2i input_dir{(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
+                               (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
+                                (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
 
         // If moving diagonally
         if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
@@ -237,34 +237,34 @@ int main()
         double y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * bobbing_timer.asSeconds() + 2.0f * total_timer.asSeconds());
 
         // Forward
-        if (input_dir.y > 0) {
-            if (worldMap[int(posX + dirX * moveSpeed)][int(posY)] == 0) posX += dirX * moveSpeed;
-            if (worldMap[int(posX)][int(posY + dirY * moveSpeed)] == 0) posY += dirY * moveSpeed;
+        if(input_dir.y > 0) {
+            if(worldMap[int(posX + dirX * moveSpeed)][int(posY)] == 0) posX += dirX * moveSpeed;
+            if(worldMap[int(posX)][int(posY + dirY * moveSpeed)] == 0) posY += dirY * moveSpeed;
         }
 
-        if (input_dir.y < 0) {
-            if (worldMap[int(posX - dirX * moveSpeed)][int(posY)] == 0) posX -= dirX * moveSpeed;
-            if (worldMap[int(posX)][int(posY - dirY * moveSpeed)] == 0) posY -= dirY * moveSpeed;
+        if(input_dir.y < 0) {
+            if(worldMap[int(posX - dirX * moveSpeed)][int(posY)] == 0) posX -= dirX * moveSpeed;
+            if(worldMap[int(posX)][int(posY - dirY * moveSpeed)] == 0) posY -= dirY * moveSpeed;
         }
 
-        if (input_dir.x > 0) {
+        if(input_dir.x > 0) {
             sf::Vector2f right_vector{(float)dirY, -(float)dirX};
-            if (worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
-            if (worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
+            if(worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
+            if(worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
         }
 
-        if (input_dir.x < 0) {
+        if(input_dir.x < 0) {
             sf::Vector2f right_vector{(float)-dirY, (float)dirX};
-            if (worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
-            if (worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
+            if(worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
+            if(worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
         }
 
         //rotate to the right
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
             moveMouse(3, elapsed.asSeconds());
         }
         //rotate to the left
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
             moveMouse(-3, elapsed.asSeconds());
         }
 
@@ -274,7 +274,7 @@ int main()
 
 
         points.clear();
-        for (int x = 0, idx_vx = 0; x < w; x++, idx_vx += vertice_count_per_column) {
+        for(int x = 0, idx_vx = 0; x < w; x++, idx_vx += vertice_count_per_column) {
             //calculate ray position and direction
             double cameraX = 2 * x / double(w) - 1; //x-coordinate in camera space
 
@@ -290,8 +290,6 @@ int main()
             double sideDistY;
 
             //length of ray from one x or y-side to next x or y-side
-            //double deltaDistX = std::abs(1 / rayDirX);
-            //double deltaDistY = std::abs(1 / rayDirY);
             double deltaDistX = sqrt(1 + (rayDirY * rayDirY) / (rayDirX * rayDirX));
             double deltaDistY = sqrt(1 + (rayDirX * rayDirX) / (rayDirY * rayDirY));
 
@@ -304,14 +302,14 @@ int main()
             int hit = 0; //was there a wall hit?
             int side; //was a NS or a EW wall hit?
             //calculate step and initial sideDist
-            if (rayDirX < 0) {
+            if(rayDirX < 0) {
                 stepX = -1;
                 sideDistX = (posX - mapX) * deltaDistX;
             } else {
                 stepX = 1;
                 sideDistX = (mapX + 1.0 - posX) * deltaDistX;
             }
-            if (rayDirY < 0) {
+            if(rayDirY < 0) {
                 stepY = -1;
                 sideDistY = (posY - mapY) * deltaDistY;
             } else {
@@ -319,9 +317,9 @@ int main()
                 sideDistY = (mapY + 1.0 - posY) * deltaDistY;
             }
             //perform DDA
-            while (hit == 0) {
+            while(hit == 0) {
                 //jump to next map square, OR in x-direction, OR in y-direction
-                if (sideDistX < sideDistY) {
+                if(sideDistX < sideDistY) {
                     sideDistX += deltaDistX;
                     mapX += stepX;
                     side = 0;
@@ -331,10 +329,10 @@ int main()
                     side = 1;
                 }
                 //Check if ray has hit a wall
-                if (worldMap[mapX][mapY] > 0) hit = 1;
+                if(worldMap[mapX][mapY] > 0) hit = 1;
             }
             //Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-            if (side == 0) {
+            if(side == 0) {
                 perpWallDist = std::fabs((mapX - posX + (1 - stepX) / 2) / rayDirX);
             } else {
                 perpWallDist = std::fabs((mapY - posY + (1 - stepY) / 2) / rayDirY);
@@ -349,14 +347,14 @@ int main()
 
             //calculate value of wallX
             double wallX; //where exactly the wall was hit
-            if (side == 0) wallX = posY + perpWallDist * rayDirY;
+            if(side == 0) wallX = posY + perpWallDist * rayDirY;
             else wallX = posX + perpWallDist * rayDirX;
             wallX -= floor((wallX));
 
             //x coordinate on the texture
             int texX = int(wallX * double(tex_width));
-            if (side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
-            if (side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
+            if(side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
+            if(side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
 
 
             // Prepare wall line
