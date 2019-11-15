@@ -93,9 +93,9 @@ namespace {
         const float s = a * a;
         float r = ((-0.0464964749 * s + 0.15931422) * s - 0.327622764) * s * a + a;
 
+        if(absy > absx) r = 1.57079637 - r;
+        if(vec.x < 0) r = 3.14159274 - r;
         if(vec.y < 0) r = -r;
-        else if(vec.x < 0) r = 3.14159274 - r;
-        else if(absy > absx) r = 1.57079637 - r;
 
         float ang = r*RAD2DEG + 90.0f;
         if(ang < 0.0f) ang += 360.0f;
