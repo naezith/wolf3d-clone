@@ -120,6 +120,10 @@ void setBrightness(sf::Vertex& v, float distance, float max_distance) {
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(w, h), "SFML window");
+    sf::RenderTexture rt;
+    rt.create(w, h);
+    sf::Sprite rt_sprite(rt.getTexture());
+
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
     sf::Texture texture;
@@ -412,8 +416,9 @@ int main()
 
         // Clear screen
         window.clear(sf::Color::Black);
-        window.draw(points, &texture);
-        window.draw(lines, &texture);
+        rt.clear(sf::Color::Black);
+        rt.draw(points, &texture);
+        rt.draw(lines, &texture);
 
         // Minimap
         minimap_rt.clear(sf::Color::Black);
@@ -488,13 +493,15 @@ int main()
 
         // Display minimap
         minimap_rt.display();
-        window.draw(minimap_circle);
+        rt.draw(minimap_circle);
 
         // Compass
-        window.draw(compass_inner_shadow);
-        window.draw(compass);
-        window.draw(compass_ring);
+        rt.draw(compass_inner_shadow);
+        rt.draw(compass);
+        rt.draw(compass_ring);
 
+        rt.display();
+        window.draw(rt_sprite);
         window.display();
     }
     return EXIT_SUCCESS;
