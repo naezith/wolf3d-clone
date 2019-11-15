@@ -289,14 +289,9 @@ int main() {
                     moveCamera(mouse_sensitivity * (pos.x - center.x), dt);
 
                     // Keyboard
-                    // Rotate to the right
-                    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-                        moveCamera(3, dt);
-                    }
-                    // Rotate to the left
-                    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-                        moveCamera(-3, dt);
-                    }
+                    float input_dir = sf::Keyboard::isKeyPressed(sf::Keyboard::Right) - sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
+
+                    if(input_dir != 0) moveCamera(input_dir * 3, dt);
                 }
 
                 // Character movement
