@@ -12,7 +12,7 @@ static sf::Vector2i wall_texture_indexes[] = {
     sf::Vector2i{3, 2}, // 2
     sf::Vector2i{0, 2}, // 3
     sf::Vector2i{1, 0}, // 4
-    sf::Vector2i{1, 1}, // 4
+    sf::Vector2i{1, 1}, // 5
 };
 static int worldMap[mapWidth][mapHeight] =
         {
@@ -129,7 +129,6 @@ int main()
     sf::Texture texture;
     texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
-    sf::Vector2i ceiling_texture_index{2, 2};
     static std::size_t tex_width = 256;
     static std::size_t tex_height = 256;
     sf::Vector2i floor_texture_index{0, 0};
