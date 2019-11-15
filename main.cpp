@@ -218,17 +218,34 @@ int main() {
     auto time_start = std::chrono::high_resolution_clock::now();
     float total_timer = 0.0f;
 
+    // FPS counter
+    const float fps_average_every_seconds = 1.0f;
+    float fps_time_sum = 0.0f;
+    int fps_capture_count = 0;
+
     while(window.isOpen()) {
         // Calculate the elapsed time and add it to lag
         auto now = std::chrono::high_resolution_clock::now();
         lag += now - time_start;
         time_start = now;
 
-        // Measure FPS and set string
+        // FPS Counter and
+        float elapsed_time = clock.restart().asSeconds();
+        fps_time_sum += elapsed_time;
+        ++fps_capture_count;
+        if(fps_time_sum > fps_average_every_seconds) {
+            // Calculate average rounded fps
+            const float avg_fps = std::round(1 / (fps_time_sum / fps_capture_count));
 
-        std::string fps_str = std::to_string(std::floor<int>(1 / clock.restart().asSeconds()));
-        fps_str.erase(fps_str.find_last_not_of('0'), std::string::npos);
-        fps_text.setString(fps_str);
+            // Reset
+            fps_time_sum = 0.0f;
+            fps_capture_count = 0;
+
+            // Set string
+            std::string fps_str = std::to_string(avg_fps);
+            fps_str.erase(fps_str.find_last_not_of('0'), std::string::npos);
+            fps_text.setString(fps_str);
+        }
 
         // Update loop
         while(lag >= timestep) {
