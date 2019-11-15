@@ -199,6 +199,10 @@ int main() {
     
     // Clock and Timer
     sf::Clock clock;
+    sf::Text fps_text;
+    sf::Font font;
+    font.loadFromFile("Ubuntu-L.ttf");
+    fps_text.setFont(font);
 
     // Variables
     float posX = 22, posY = 12;  // X and Y start position
@@ -220,8 +224,11 @@ int main() {
         lag += now - time_start;
         time_start = now;
 
-        // Measure FPS
-        sf::Time elapsed = clock.restart();
+        // Measure FPS and set string
+
+        std::string fps_str = std::to_string(std::floor<int>(1 / clock.restart().asSeconds()));
+        fps_str.erase(fps_str.find_last_not_of('0'), std::string::npos);
+        fps_text.setString(fps_str);
 
         // Update loop
         while(lag >= timestep) {
@@ -555,11 +562,6 @@ int main() {
 
         // Render
         {
-            // Print FPS
-            {
-                //std::cout << "Render: " << 1 / elapsed.asSeconds() << std::endl;
-            }
-
             // Clear window and render texture
             {
                 window.clear(sf::Color::Black);
@@ -612,6 +614,11 @@ int main() {
                         rt.draw(compass_ring);
                     }
                 }
+            }
+
+            // Print FPS
+            {
+                rt.draw(fps_text);
             }
 
             // Finalize render texture, draw it to the window, then finalize the window rendering
