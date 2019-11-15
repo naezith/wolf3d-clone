@@ -23,7 +23,8 @@ static const sf::Vector2i wall_texture_indexes[] = {
     sf::Vector2i{1, 0}, // 4
     sf::Vector2i{1, 1}, // 5
 };
-static const float minimap_zoom = 0.5f;
+static const double minimap_zoom = 0.5;
+static const double movement_speed = 5.0;
 
 static int worldMap[mapWidth][mapHeight] =
 {
@@ -172,7 +173,7 @@ int main() {
     minimap_rt.setSmooth(true);
 
     // Minimap circle
-    sf::CircleShape minimap_circle(minimap_height);
+    sf::CircleShape minimap_circle(minimap_height * 0.5);
     minimap_circle.setTexture(&minimap_rt.getTexture());
     minimap_circle.setOrigin(minimap_circle.getRadius(), minimap_circle.getRadius());
     minimap_circle.setPosition({10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10});
@@ -199,80 +200,82 @@ int main() {
     compass_arrow.setOrigin(compass_arrow_texture.getSize().x / 2, compass_arrow_texture.getSize().y / 2);
     compass_arrow.setScale(1.0f, 1.5f);
 
-    // 2 vertices for a line, 3 lines (ceiling wall floor)
-    int vertice_count_per_column = 2;
-    sf::VertexArray map_tiles{sf::Quads, mapWidth * mapHeight * 4};
-    sf::VertexArray lines(sf::Lines, w * vertice_count_per_column);
-    sf::VertexArray points(sf::Points);
+    // Arrays
+    sf::VertexArray minimap_tiles{sf::Quads, mapWidth * mapHeight * 4};
+    sf::VertexArray wall_lines(sf::Lines, w * 2);
+    sf::VertexArray floor_points(sf::Points); 
+    
+    // Clock and Timer
     sf::Clock clock;
-    sf::Time bobbing_timer;
     sf::Time total_timer;
+    
+    // Character bobbing timer
+    sf::Time walking_timer;
+
     while(window.isOpen()) {
         sf::Time elapsed = clock.restart();
         total_timer += elapsed;
 
+        // Print FPS
         //std::cout << 1 / elapsed.asSeconds() << std::endl;
+
         // Process events
         sf::Event event{};
         while(window.pollEvent(event)) {
             // Close window: exit
-            if(event.type == sf::Event::Closed ||
-                    (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
+            if(event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
                 window.close();
         }
 
-        // Mouse
+        // Camera movement
         {
+            // Mouse
             sf::Vector2i pos = sf::Mouse::getPosition(window);
             sf::Vector2i center{w / 2, h / 2};
             moveMouse(mouse_sensitivity * (pos.x - center.x), elapsed.asSeconds());
             sf::Mouse::setPosition({w / 2, h / 2}, window);
-        }
-        //speed modifiers
-        double moveSpeed = elapsed.asSeconds() * 5.0; //the constant value is in squares/second
 
-        sf::Vector2i input_dir{(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
-                               (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
-                                (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
-
-        // If moving diagonally
-        if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
-
-        // If moving
-        bool moving = input_dir.x != 0 || input_dir.y != 0;
-        if(moving) bobbing_timer += elapsed;
-        double y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * bobbing_timer.asSeconds() + 2.0f * total_timer.asSeconds());
-
-        // Forward
-        if(input_dir.y > 0) {
-            if(worldMap[int(posX + dirX * moveSpeed)][int(posY)] == 0) posX += dirX * moveSpeed;
-            if(worldMap[int(posX)][int(posY + dirY * moveSpeed)] == 0) posY += dirY * moveSpeed;
+            // Keyboard
+            // Rotate to the right
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+                moveMouse(3, elapsed.asSeconds());
+            }
+            // Rotate to the left
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+                moveMouse(-3, elapsed.asSeconds());
+            }
         }
 
-        if(input_dir.y < 0) {
-            if(worldMap[int(posX - dirX * moveSpeed)][int(posY)] == 0) posX -= dirX * moveSpeed;
-            if(worldMap[int(posX)][int(posY - dirY * moveSpeed)] == 0) posY -= dirY * moveSpeed;
-        }
+        // Character movement
+        double bobbing_y_offset;
+        {
+            double moveSpeed = elapsed.asSeconds() * movement_speed; //the constant value is in squares/second
 
-        if(input_dir.x > 0) {
-            sf::Vector2f right_vector{(float)dirY, -(float)dirX};
-            if(worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
-            if(worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
-        }
+            sf::Vector2i input_dir{(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
+                                   (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
+                                    (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
 
-        if(input_dir.x < 0) {
-            sf::Vector2f right_vector{(float)-dirY, (float)dirX};
-            if(worldMap[int(posX + right_vector.x * moveSpeed)][int(posY)] == 0) posX += right_vector.x * moveSpeed;
-            if(worldMap[int(posX)][int(posY + right_vector.y * moveSpeed)] == 0) posY += right_vector.y * moveSpeed;
-        }
+            // If moving diagonally
+            if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
 
-        //rotate to the right
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-            moveMouse(3, elapsed.asSeconds());
-        }
-        //rotate to the left
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-            moveMouse(-3, elapsed.asSeconds());
+            // If moving
+            bool moving = input_dir.x != 0 || input_dir.y != 0;
+            if(moving) walking_timer += elapsed;
+            bobbing_y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * walking_timer.asSeconds() + 2.0f * total_timer.asSeconds());
+
+            // Move forward or back
+            if(input_dir.y != 0) {
+                auto dir = sf::Vector2f(dirX, dirY) * float(input_dir.y);
+                if(worldMap[int(posX + dir.x * moveSpeed)][int(posY)] == 0) posX += dir.x * moveSpeed;
+                if(worldMap[int(posX)][int(posY + dir.y * moveSpeed)] == 0) posY += dir.y * moveSpeed;
+            }
+
+            // Strafe left or right
+            if(input_dir.x != 0) {
+                auto dir_rotated_90 = input_dir.x > 0 ? sf::Vector2f{(float)dirY, -(float)dirX} : sf::Vector2f{(float)-dirY, (float)dirX};
+                if(worldMap[int(posX + dir_rotated_90.x * moveSpeed)][int(posY)] == 0) posX += dir_rotated_90.x * moveSpeed;
+                if(worldMap[int(posX)][int(posY + dir_rotated_90.y * moveSpeed)] == 0) posY += dir_rotated_90.y * moveSpeed;
+            }
         }
 
         // Update minimap rotation
@@ -280,8 +283,8 @@ int main() {
         compass.setRotation(minimap_circle.getRotation());
 
 
-        points.clear();
-        for(int x = 0, idx_vx = 0; x < w; x++, idx_vx += vertice_count_per_column) {
+        floor_points.clear();
+        for(int x = 0, idx_vx = 0; x < w; x++, idx_vx += 2) {
             //calculate ray position and direction
             double cameraX = 2 * x / double(w) - 1; //x-coordinate in camera space
 
@@ -349,8 +352,8 @@ int main() {
             double lineHeight = std::abs(h / perpWallDist);
 
             //calculate lowest and highest pixel to fill in current stripe
-            double drawStart = y_offset - lineHeight / 2 + h / 2;
-            double drawEnd = y_offset + lineHeight / 2 + h / 2;
+            double drawStart = bobbing_y_offset - lineHeight / 2 + h / 2;
+            double drawEnd = bobbing_y_offset + lineHeight / 2 + h / 2;
 
             //calculate value of wallX
             double wallX; //where exactly the wall was hit
@@ -367,15 +370,15 @@ int main() {
             // Prepare wall line
             {
                 auto offset = get_texture_offset(worldMap[mapX][mapY]);
-                lines[idx_vx + 0].texCoords = offset + sf::Vector2f{float(texX), 0};
-                lines[idx_vx + 1].texCoords = offset + sf::Vector2f{float(texX), (float)tex_height};
-                lines[idx_vx + 0].position = {float(x), (float) drawStart};
-                lines[idx_vx + 1].position = {float(x), (float) drawEnd};
+                wall_lines[idx_vx + 0].texCoords = offset + sf::Vector2f{float(texX), 0};
+                wall_lines[idx_vx + 1].texCoords = offset + sf::Vector2f{float(texX), (float)tex_height};
+                wall_lines[idx_vx + 0].position = {float(x), (float) drawStart};
+                wall_lines[idx_vx + 1].position = {float(x), (float) drawEnd};
 
                 // Brightness
                 float distance = magnitude(sf::Vector2f(mapX - posX + (side == 1 ? wallX : 0), mapY - posY + (side == 0 ? wallX : 0)));
-                setBrightness(lines[idx_vx + 0], distance, darkness_distance);
-                setBrightness(lines[idx_vx + 1], distance, darkness_distance);
+                setBrightness(wall_lines[idx_vx + 0], distance, darkness_distance);
+                setBrightness(wall_lines[idx_vx + 1], distance, darkness_distance);
             }
 
 
@@ -407,7 +410,7 @@ int main() {
             //draw the floor from drawEnd to the bottom of the screen
             for(int y = drawEnd + 1; y < h; y++)
             {
-                double currentDist = h / (2.0 * (y - y_offset) - h); //you could make a small lookup table for this instead
+                double currentDist = h / (2.0 * (y - bobbing_y_offset) - h); //you could make a small lookup table for this instead
                 double weight = currentDist / perpWallDist;
                 double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
                 double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
@@ -420,7 +423,7 @@ int main() {
                 {
                     sf::Vertex vertex({ (float)x - 1, (float)y }, floor_texture_offset + sf::Vector2f{(float)floorTexX, (float)floorTexY});
                     setBrightness(vertex, currentDist, darkness_distance);
-                    points.append(vertex);
+                    floor_points.append(vertex);
                 }
             }
         }
@@ -428,8 +431,8 @@ int main() {
         // Clear screen
         window.clear(sf::Color::Black);
         rt.clear(sf::Color::Black);
-        rt.draw(points, &texture);
-        rt.draw(lines, &texture);
+        rt.draw(floor_points, &texture);
+        rt.draw(wall_lines, &texture);
 
         // Minimap
         minimap_rt.clear(sf::Color::Black);
@@ -441,21 +444,21 @@ int main() {
                 int type = worldMap[m_y][m_x];
                 auto offset = get_texture_offset(worldMap[m_y][m_x]);
 
-                map_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
-                map_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
-                map_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
-                map_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
+                minimap_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
+                minimap_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
+                minimap_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                minimap_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
 
-                map_tiles[idx + 0].texCoords = { offset.x, offset.y };
-                map_tiles[idx + 1].texCoords = { offset.x + tex_width, offset.y };
-                map_tiles[idx + 2].texCoords = { offset.x + tex_width, offset.y + tex_height };
-                map_tiles[idx + 3].texCoords = { offset.x, offset.y + tex_height };
+                minimap_tiles[idx + 0].texCoords = { offset.x, offset.y };
+                minimap_tiles[idx + 1].texCoords = { offset.x + tex_width, offset.y };
+                minimap_tiles[idx + 2].texCoords = { offset.x + tex_width, offset.y + tex_height };
+                minimap_tiles[idx + 3].texCoords = { offset.x, offset.y + tex_height };
 
                 float darkness = 150;
                 sf::Color color = type == 0 ? sf::Color(darkness, darkness, darkness) : sf::Color::White;
 
                 for(int i = 0; i < 4; ++i) {
-                    map_tiles[idx + i].color = color;
+                    minimap_tiles[idx + i].color = color;
                 }
             }
         }
@@ -475,7 +478,7 @@ int main() {
                          std::min(std::max(static_cast<int>(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y), 0), static_cast<int>(minimap_rt_size.y - minimap_rect_size.y)),
                                   minimap_rect_size.x, minimap_rect_size.y});
 
-        minimap_rt.draw(map_tiles, &texture);
+        minimap_rt.draw(minimap_tiles, &texture);
 
         // FOV in minimap
         sf::VertexArray minimap_fov{sf::Triangles, 3};
