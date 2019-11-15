@@ -3,10 +3,19 @@
 #include <iostream>
 #include <cmath>
 
+// Constants
+static const int w = 1920;
+static const int h = 1080;
 #define mapWidth 24
 #define mapHeight 24
-
-static sf::Vector2i wall_texture_indexes[] = {
+static const std::size_t tex_width = 256;
+static const std::size_t tex_height = 256;
+static const float darkness_distance = 8.0f;
+static const double fov_degrees = 103;
+static const double fov = fov_degrees / 100.0;
+static const float mouse_sensitivity = 0.3f;
+static const sf::Vector2i floor_texture_index{0, 0};
+static const sf::Vector2i wall_texture_indexes[] = {
     sf::Vector2i{0, 0}, // 0
     sf::Vector2i{2, 0}, // 1
     sf::Vector2i{3, 2}, // 2
@@ -14,15 +23,7 @@ static sf::Vector2i wall_texture_indexes[] = {
     sf::Vector2i{1, 0}, // 4
     sf::Vector2i{1, 1}, // 5
 };
-
-
-static const std::size_t tex_width = 256;
-static const std::size_t tex_height = 256;
-sf::Vector2f get_texture_offset(int type) {
-    auto tex_idx = wall_texture_indexes[type];
-
-    return {(float)tex_idx.x * (tex_width + 2) + 1, (float)tex_idx.y * (tex_height + 2) + 1};
-}
+static const float minimap_zoom = 0.5f;
 
 static int worldMap[mapWidth][mapHeight] =
 {
@@ -53,6 +54,7 @@ static int worldMap[mapWidth][mapHeight] =
 };
 
 
+// Angle to Vector
 static const sf::Vector2f UNIT_UP(0, -1);
 static const sf::Vector2f UNIT_UP_RIGHT(1, -1);
 static const sf::Vector2f UNIT_UP_LEFT(-1, -1);
@@ -76,16 +78,6 @@ static sf::Vector2f angleToVec(const float& degree) {
     return sf::Vector2f(cosf(rad), -sinf(rad));
 }
 
-static double posX = 22, posY = 12;  //x and y start position
-static double dirX = -1, dirY = 0; //initial direction vector
-static double fov_degrees = 103;
-static double fov = fov_degrees / 100.0;
-static double planeX = 0, planeY = fov; //the 2d raycaster version of camera plane
-
-static const int w = 1920;
-static const int h = 1080;
-static const float mouse_sensitivity = 0.3f;
-
 static float magnitude(const sf::Vector2f& a) {
     return sqrt(a.x * a.x + a.y * a.y);
 }
@@ -107,6 +99,11 @@ static float vecToAngle(const sf::Vector2f& vec){
     return ang + 90;
 }
 
+// Variables
+static double posX = 22, posY = 12;  //x and y start position
+static double dirX = -1, dirY = 0; //initial direction vector
+static double planeX = 0, planeY = fov; //the 2d raycaster version of camera plane
+
 void moveMouse(float amount, float dt) {
     double rotSpeed = amount * dt; //the constant value is in radians/second
 
@@ -119,7 +116,6 @@ void moveMouse(float amount, float dt) {
     planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
 }
 
-float darkness_distance = 8.0f;
 void setBrightness(sf::Vertex& v, float distance, float max_distance) {
     const float max_brightness = 90.0f;
     float darkness = std::max(std::min(max_brightness * (float)distance / (max_distance), max_brightness), 0.0f);
@@ -127,20 +123,31 @@ void setBrightness(sf::Vertex& v, float distance, float max_distance) {
     v.color = sf::Color(brightness, brightness, brightness);
 }
 
-int main()
-{
-    sf::RenderWindow window(sf::VideoMode(w, h), "SFML window");
+
+static sf::Vector2f get_texture_offset(const sf::Vector2i& tex_idx) {
+    return {(float)tex_idx.x * (tex_width + 2) + 1, (float)tex_idx.y * (tex_height + 2) + 1};
+}
+
+static sf::Vector2f get_texture_offset(int type) {
+    return get_texture_offset(wall_texture_indexes[type]);
+}
+
+int main() {
+    // Prepare window
+    sf::RenderWindow window(sf::VideoMode(w, h), "Antara Gaming SDK - Wolf3D");
+    window.setMouseCursorVisible(false);
+    window.setMouseCursorGrabbed(true);
+
+    // Prepare render texture
     sf::RenderTexture rt;
     rt.create(w, h);
     sf::Sprite rt_sprite(rt.getTexture());
 
-    window.setMouseCursorVisible(false);
-    window.setMouseCursorGrabbed(true);
+    // Wall and floor textures
     sf::Texture texture;
     texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
-    sf::Vector2i floor_texture_index{0, 0};
-    sf::Vector2f floor_texture_offset{(float)floor_texture_index.x * (tex_width + 2) + 1, (float)floor_texture_index.y * (tex_height + 2) + 1};
+    sf::Vector2f floor_texture_offset{get_texture_offset(floor_texture_index)};
 
     // Compass Textures
     sf::Texture compass_texture;
@@ -156,20 +163,20 @@ int main()
     compass_arrow_texture.setSmooth(true);
     compass_arrow_texture.loadFromFile("compass_arrow.png");
 
+    // Minimap render texture
+    const float minimap_height = compass_inner_shadow_texture.getSize().y;
+
     sf::RenderTexture minimap_rt;
-    sf::CircleShape minimap_circle(compass_inner_shadow_texture.getSize().y / 2);
-    float minimap_height = minimap_circle.getRadius() * 2;
-    minimap_circle.setOrigin(minimap_circle.getRadius(), minimap_circle.getRadius());
-    float minimap_zoom = 0.5f;
     minimap_rt.create(minimap_height / minimap_zoom, minimap_height / minimap_zoom);
     minimap_rt.setRepeated(false);
     minimap_rt.setSmooth(true);
-    minimap_circle.setPosition(10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10);
 
-
-    float minimap_alpha = 200;
-    minimap_circle.setFillColor(sf::Color(255, 255, 255, minimap_alpha));
+    // Minimap circle
+    sf::CircleShape minimap_circle(minimap_height);
     minimap_circle.setTexture(&minimap_rt.getTexture());
+    minimap_circle.setOrigin(minimap_circle.getRadius(), minimap_circle.getRadius());
+    minimap_circle.setPosition({10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10});
+    minimap_circle.setFillColor(sf::Color(255, 255, 255, 200));
 
     // COMPASS
     sf::Sprite compass(compass_texture);
@@ -179,8 +186,8 @@ int main()
     // Compass ring
     sf::Sprite compass_ring(compass_ring_texture);
     compass_ring.setOrigin(compass_ring_texture.getSize().x / 2, compass_ring_texture.getSize().y / 2);
-    compass_ring.setPosition(minimap_circle.getPosition());
     compass_ring.setColor(sf::Color(70, 70, 70));
+    compass_ring.setPosition(minimap_circle.getPosition());
 
     // Compass inner shadow
     sf::Sprite compass_inner_shadow(compass_inner_shadow_texture);
