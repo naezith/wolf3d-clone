@@ -14,116 +14,98 @@ static const float darkness_distance = 8.0f;
 static const double fov_degrees = 103;
 static const double fov = fov_degrees / 100.0;
 static const float mouse_sensitivity = 0.3f;
-static const sf::Vector2i floor_texture_index{0, 0};
-static const sf::Vector2i wall_texture_indexes[] = {
-    sf::Vector2i{0, 0}, // 0
-    sf::Vector2i{2, 0}, // 1
-    sf::Vector2i{3, 2}, // 2
-    sf::Vector2i{0, 2}, // 3
-    sf::Vector2i{1, 0}, // 4
-    sf::Vector2i{1, 1}, // 5
-};
 static const double minimap_zoom = 0.5;
 static const double movement_speed = 5.0;
-
-static int worldMap[mapWidth][mapHeight] =
-{
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 0, 0, 0, 0, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+static const float max_brightness = 90.0f;
+static const sf::Vector2i floor_texture_index{0, 0};
+static const sf::Vector2i wall_texture_indexes[] = {
+        sf::Vector2i{0, 0}, // 0
+        sf::Vector2i{2, 0}, // 1
+        sf::Vector2i{3, 2}, // 2
+        sf::Vector2i{0, 2}, // 3
+        sf::Vector2i{1, 0}, // 4
+        sf::Vector2i{1, 1}, // 5
+};
+static int worldMap[mapWidth][mapHeight] = {
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 0, 0, 0, 0, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
+// Math helpers
+namespace {
+    // Angle to Vector
+    static const sf::Vector2f UNIT_UP(0, -1);
+    static const sf::Vector2f UNIT_UP_RIGHT(1, -1);
+    static const sf::Vector2f UNIT_UP_LEFT(-1, -1);
+    static const sf::Vector2f UNIT_DOWN(0, 1);
+    static const sf::Vector2f UNIT_DOWN_RIGHT(1, 1);
+    static const sf::Vector2f UNIT_DOWN_LEFT(-1, 1);
+    static const sf::Vector2f UNIT_RIGHT(1, 0);
+    static const sf::Vector2f UNIT_LEFT(-1, 0);
+    constexpr float RAD2DEG = 57.295779513082320876798154814105f;
+    static sf::Vector2f angleToVec(const float& degree) {
+        if(degree == 180) return UNIT_DOWN;
+        if(degree == 90) return UNIT_RIGHT;
+        if(degree == 270) return UNIT_LEFT;
+        if(degree == 0 || degree == 360) return UNIT_UP;
+        if(degree == 45) return UNIT_UP_RIGHT;
+        if(degree == 135) return UNIT_DOWN_RIGHT;
+        if(degree == 225) return UNIT_DOWN_LEFT;
+        if(degree == 315) return UNIT_UP_LEFT;
 
-// Angle to Vector
-static const sf::Vector2f UNIT_UP(0, -1);
-static const sf::Vector2f UNIT_UP_RIGHT(1, -1);
-static const sf::Vector2f UNIT_UP_LEFT(-1, -1);
-static const sf::Vector2f UNIT_DOWN(0, 1);
-static const sf::Vector2f UNIT_DOWN_RIGHT(1, 1);
-static const sf::Vector2f UNIT_DOWN_LEFT(-1, 1);
-static const sf::Vector2f UNIT_RIGHT(1, 0);
-static const sf::Vector2f UNIT_LEFT(-1, 0);
-constexpr float RAD2DEG = 57.295779513082320876798154814105f;
-static sf::Vector2f angleToVec(const float& degree) {
-    if(degree == 180) return UNIT_DOWN;
-    if(degree == 90) return UNIT_RIGHT;
-    if(degree == 270) return UNIT_LEFT;
-    if(degree == 0 || degree == 360) return UNIT_UP;
-    if(degree == 45) return UNIT_UP_RIGHT;
-    if(degree == 135) return UNIT_DOWN_RIGHT;
-    if(degree == 225) return UNIT_DOWN_LEFT;
-    if(degree == 315) return UNIT_UP_LEFT;
+        float rad = (-degree + 90.0f)/RAD2DEG;
+        return sf::Vector2f(cosf(rad), -sinf(rad));
+    }
 
-    float rad = (-degree + 90.0f)/RAD2DEG;
-    return sf::Vector2f(cosf(rad), -sinf(rad));
+    static float magnitude(const sf::Vector2f& a) {
+        return sqrt(a.x * a.x + a.y * a.y);
+    }
+
+    static float vecToAngle(const sf::Vector2f& vec){
+        if(vec.x == 0.0f && vec.y == 0.0f) return 0.0f;
+        float absx = std::abs(vec.x), absy = std::abs(vec.y);
+        double a = absx > absy ? absy/absx : absx/absy;
+        double s = a * a;
+        double r = ((-0.0464964749 * s + 0.15931422) * s - 0.327622764) * s * a + a;
+
+        if(absy > absx) r = 1.57079637 - r;
+        if(vec.x < 0) r = 3.14159274 - r;
+        if(vec.y < 0) r = -r;
+
+        double ang = r*RAD2DEG + 90.0;
+        if(ang < 0.0f) ang += 360.0;
+        else if(ang > 360.0f) ang -= 360.0;
+        return ang + 90;
+    }
 }
 
-static float magnitude(const sf::Vector2f& a) {
-    return sqrt(a.x * a.x + a.y * a.y);
-}
-
-static float vecToAngle(const sf::Vector2f& vec){
-    if(vec.x == 0.0f && vec.y == 0.0f) return 0.0f;
-    float absx = std::abs(vec.x), absy = std::abs(vec.y);
-    double a = absx > absy ? absy/absx : absx/absy;
-    double s = a * a;
-    double r = ((-0.0464964749 * s + 0.15931422) * s - 0.327622764) * s * a + a;
-
-    if(absy > absx) r = 1.57079637 - r;
-    if(vec.x < 0) r = 3.14159274 - r;
-    if(vec.y < 0) r = -r;
-
-    double ang = r*RAD2DEG + 90.0;
-    if(ang < 0.0f) ang += 360.0;
-    else if(ang > 360.0f) ang -= 360.0;
-    return ang + 90;
-}
-
-// Variables
-static double posX = 22, posY = 12;  //x and y start position
-static double dirX = -1, dirY = 0; //initial direction vector
-static double planeX = 0, planeY = fov; //the 2d raycaster version of camera plane
-
-void moveMouse(float amount, float dt) {
-    double rotSpeed = amount * dt; //the constant value is in radians/second
-
-    //both camera direction and camera plane must be rotated
-    double oldDirX = dirX;
-    dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
-    dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
-    double oldPlaneX = planeX;
-    planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
-    planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
-}
-
-void setBrightness(sf::Vertex& v, float distance, float max_distance) {
-    const float max_brightness = 90.0f;
-    float darkness = std::max(std::min(max_brightness * (float)distance / (max_distance), max_brightness), 0.0f);
-    float brightness = max_brightness - darkness;
+static void setBrightness(sf::Vertex& v, float distance, float max_distance) {
+    const float darkness = std::max(std::min(max_brightness * (float)distance / (max_distance), max_brightness), 0.0f);
+    const float brightness = max_brightness - darkness;
     v.color = sf::Color(brightness, brightness, brightness);
 }
-
 
 static sf::Vector2f get_texture_offset(const sf::Vector2i& tex_idx) {
     return {(float)tex_idx.x * (tex_width + 2) + 1, (float)tex_idx.y * (tex_height + 2) + 1};
@@ -209,92 +191,119 @@ int main() {
     // Clock and Timer
     sf::Clock clock;
     sf::Time total_timer;
-    
+
+    // Variables
     // Character bobbing timer
+    double posX = 22, posY = 12;  // X and Y start position
+    double dirX = -1, dirY = 0; // Initial direction vector
+    double planeX = 0, planeY = fov; // The 2d ray caster version of camera plane
+
     sf::Time walking_timer;
 
+    // Game loop
     while(window.isOpen()) {
         sf::Time elapsed = clock.restart();
         total_timer += elapsed;
 
-        // Print FPS
-        //std::cout << 1 / elapsed.asSeconds() << std::endl;
-
         // Process events
-        sf::Event event{};
-        while(window.pollEvent(event)) {
-            // Close window: exit
-            if(event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
-                window.close();
-        }
-
-        // Camera movement
         {
-            // Mouse
-            sf::Vector2i pos = sf::Mouse::getPosition(window);
-            sf::Vector2i center{w / 2, h / 2};
-            moveMouse(mouse_sensitivity * (pos.x - center.x), elapsed.asSeconds());
-            sf::Mouse::setPosition({w / 2, h / 2}, window);
-
-            // Keyboard
-            // Rotate to the right
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-                moveMouse(3, elapsed.asSeconds());
-            }
-            // Rotate to the left
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-                moveMouse(-3, elapsed.asSeconds());
+            sf::Event event{};
+            while (window.pollEvent(event)) {
+                // Close window: exit
+                if (event.type == sf::Event::Closed ||
+                    (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
+                    window.close();
             }
         }
 
-        // Character movement
-        double bobbing_y_offset;
+        // Update
         {
-            sf::Vector2i input_dir{(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
-                                   (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
-                                    (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
-
-            // Bobbing
+            // Camera movement
             {
-                bool moving = input_dir.x != 0 || input_dir.y != 0;
-                if(moving) walking_timer += elapsed;
-                bobbing_y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * walking_timer.asSeconds() + 2.0f * total_timer.asSeconds());
-            }
+                // Mouse
+                sf::Vector2i pos = sf::Mouse::getPosition(window);
+                sf::Vector2i center{w / 2, h / 2};
+                sf::Mouse::setPosition(center, window);
 
-            // Move forward or back
-            {
-                double moveSpeed = elapsed.asSeconds() * movement_speed;
+                // Move camera
+                auto moveCamera = [&dirX, &dirY, &planeX, &planeY](float amount, float dt) {
+                    const double rotSpeed = amount * dt; // Constant value is in radians/second
 
-                // Normalize speed if moving diagonally
-                if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
-
-                auto move = [](sf::Vector2f vec) {
-                    if(worldMap[int(posX + vec.x)][int(posY)] == 0) posX += vec.x;
-                    if(worldMap[int(posX)][int(posY + vec.y)] == 0) posY += vec.y;
+                    // Both camera direction and camera plane must be rotated
+                    const double oldDirX = dirX;
+                    dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
+                    dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
+                    const double oldPlaneX = planeX;
+                    planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
+                    planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
                 };
 
-                if(input_dir.y != 0) {
-                    auto dir = sf::Vector2f(dirX, dirY) * float(input_dir.y);
-                    move(dir * float(moveSpeed));
-                }
+                moveCamera(mouse_sensitivity * (pos.x - center.x), elapsed.asSeconds());
 
-                // Strafe left or right
-                if(input_dir.x != 0) {
-                    auto dir = sf::Vector2f{(float)dirY, -(float)dirX} * float(input_dir.x);
-                    move(dir * float(moveSpeed));
+                // Keyboard
+                // Rotate to the right
+                if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+                    moveCamera(3, elapsed.asSeconds());
+                }
+                // Rotate to the left
+                if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+                    moveCamera(-3, elapsed.asSeconds());
                 }
             }
-        }
 
-        // Update minimap rotation
-        minimap_circle.setRotation(vecToAngle({(float)dirX, (float)dirY}));
-        compass.setRotation(minimap_circle.getRotation());
+            // Character movement
+            double bobbing_y_offset;
+            {
+                sf::Vector2i input_dir{(sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
+                                       (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
+                                        (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))};
 
-        // Clear floor points array
-        floor_points.clear();
+                // Bobbing
+                {
+                    bool moving = input_dir.x != 0 || input_dir.y != 0;
+                    if(moving) walking_timer += elapsed;
+                    bobbing_y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * walking_timer.asSeconds() + 2.0f * total_timer.asSeconds());
+                }
 
-        // Raycasting algorithm, Loop every vertical line of the screen
-        for(int x = 0, idx_vx = 0; x < w; x++, idx_vx += 2) {
+                // Move forward or back
+                {
+                    double moveSpeed = elapsed.asSeconds() * movement_speed;
+
+                    // Normalize speed if moving diagonally
+                    if(input_dir.x != 0 && input_dir.y != 0) moveSpeed /= sqrt(2);
+
+                    // Move
+                    auto move = [&posX, &posY](const sf::Vector2f& vec) {
+                        if(worldMap[int(posX + vec.x)][int(posY)] == 0) posX += vec.x;
+                        if(worldMap[int(posX)][int(posY + vec.y)] == 0) posY += vec.y;
+                    };
+
+                    if(input_dir.y != 0) {
+                        auto dir = sf::Vector2f(dirX, dirY) * float(input_dir.y);
+                        move(dir * float(moveSpeed));
+                    }
+
+                    // Strafe left or right
+                    if(input_dir.x != 0) {
+                        auto dir = sf::Vector2f{(float)dirY, -(float)dirX} * float(input_dir.x);
+                        move(dir * float(moveSpeed));
+                    }
+                }
+            }
+
+            // Update minimap rotation
+            {
+                minimap_circle.setRotation(vecToAngle({(float)dirX, (float)dirY}));
+                compass.setRotation(minimap_circle.getRotation());
+            }
+
+            // Prepare wall and floor
+            {
+                // Clear floor points array
+                floor_points.clear();
+
+                // Raycasting algorithm, Loop every vertical line of the screen
+                for(int x = 0, idx_vx = 0; x < w; x++, idx_vx += 2) {
             // Calculate ray position and direction
             double cameraX = 2 * x / double(w) - 1; // X-coordinate in camera space
 
@@ -442,6 +451,8 @@ int main() {
                 }
             }
         }
+            }
+        }
 
         // Render
         {
@@ -451,102 +462,106 @@ int main() {
                 rt.clear(sf::Color::Black);
             }
 
-            // Draw wall and floor
+            // Draw everything
             {
-                rt.draw(wall_lines, &texture);
-                rt.draw(floor_points, &texture);
-            }
-
-            // Minimap
-            {
-                // Clear render texture
+                // Draw wall and floor
                 {
-                    minimap_rt.clear(sf::Color::Black);
+                    rt.draw(wall_lines, &texture);
+                    rt.draw(floor_points, &texture);
                 }
-                // Tiles
-                const float tile_size = (float)minimap_rt.getSize().y / mapWidth;
+
+                // Minimap
                 {
-                    for(int m_x = 0, idx = 0; m_x < mapWidth; ++m_x) {
-                        for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
-                            const int type = worldMap[m_y][m_x];
-
-                            // Position
-                            minimap_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
-                            minimap_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
-                            minimap_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
-                            minimap_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
-
-                            // Texture
-                            const auto offset = get_texture_offset(type);
-                            minimap_tiles[idx + 0].texCoords = { offset.x, offset.y };
-                            minimap_tiles[idx + 1].texCoords = { offset.x + tex_width, offset.y };
-                            minimap_tiles[idx + 2].texCoords = { offset.x + tex_width, offset.y + tex_height };
-                            minimap_tiles[idx + 3].texCoords = { offset.x, offset.y + tex_height };
-
-                            // Color
-                            const float darkness = 150;
-                            sf::Color color = type == 0 ? sf::Color(darkness, darkness, darkness) : sf::Color::White;
-                            for(int i = 0; i < 4; ++i) minimap_tiles[idx + i].color = color;
-                        }
+                    // Clear render texture
+                    {
+                        minimap_rt.clear(sf::Color::Black);
                     }
 
-                    // Draw to minimap render texture
-                    minimap_rt.draw(minimap_tiles, &texture);
-                }
+                    // Tiles
+                    const float tile_size = (float)minimap_rt.getSize().y / mapWidth;
+                    {
+                        for(int m_x = 0, idx = 0; m_x < mapWidth; ++m_x) {
+                            for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
+                                const int type = worldMap[m_y][m_x];
 
-                // Draw FOV in minimap
-                const sf::Vector2f character_pos{(float)posY * tile_size, (float)posX * tile_size};
-                const float character_dir_angle = -vecToAngle({(float)dirX, (float)dirY});
-                {
-                    // Angles
-                    const float fov_arm_dist = tile_size * darkness_distance * (minimap_height / minimap_rt.getSize().x) / minimap_zoom;
-                    const sf::Vector2f left_fov_vec = angleToVec(character_dir_angle - fov_degrees * 0.5f) * fov_arm_dist;
-                    const sf::Vector2f right_fov_vec = angleToVec(character_dir_angle + fov_degrees * 0.5f) * fov_arm_dist;
+                                // Position
+                                minimap_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
+                                minimap_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
+                                minimap_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                                minimap_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
 
-                    // Positions
-                    minimap_fov[0].position = character_pos;
-                    minimap_fov[1].position = minimap_fov[0].position + left_fov_vec;
-                    minimap_fov[2].position = minimap_fov[0].position + right_fov_vec;
+                                // Texture
+                                const auto offset = get_texture_offset(type);
+                                minimap_tiles[idx + 0].texCoords = { offset.x, offset.y };
+                                minimap_tiles[idx + 1].texCoords = { offset.x + tex_width, offset.y };
+                                minimap_tiles[idx + 2].texCoords = { offset.x + tex_width, offset.y + tex_height };
+                                minimap_tiles[idx + 3].texCoords = { offset.x, offset.y + tex_height };
 
-                    // Character point is visible
-                    sf::Color fov_color = sf::Color(255, 255, 255, 60);
-                    minimap_fov[0].color = fov_color;
+                                // Color
+                                const float darkness = 150;
+                                sf::Color color = type == 0 ? sf::Color(darkness, darkness, darkness) : sf::Color::White;
+                                for(int i = 0; i < 4; ++i) minimap_tiles[idx + i].color = color;
+                            }
+                        }
 
-                    // Then it goes invisible towards the end
-                    fov_color.a = 0;
-                    for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
+                        // Draw to minimap render texture
+                        minimap_rt.draw(minimap_tiles, &texture);
+                    }
 
-                    // Draw to minimap render texture
-                    minimap_rt.draw(minimap_fov);
-                }
+                    // Draw FOV in minimap
+                    const sf::Vector2f character_pos{(float)posY * tile_size, (float)posX * tile_size};
+                    const float character_dir_angle = -vecToAngle({(float)dirX, (float)dirY});
+                    {
+                        // Angles
+                        const float fov_arm_dist = tile_size * darkness_distance * (minimap_height / minimap_rt.getSize().x) / minimap_zoom;
+                        const sf::Vector2f left_fov_vec = angleToVec(character_dir_angle - fov_degrees * 0.5f) * fov_arm_dist;
+                        const sf::Vector2f right_fov_vec = angleToVec(character_dir_angle + fov_degrees * 0.5f) * fov_arm_dist;
 
-                // Draw compass character arrow
-                {
-                    compass_arrow.setPosition(character_pos);
-                    compass_arrow.setRotation(character_dir_angle);
-                    minimap_rt.draw(compass_arrow);
-                }
+                        // Positions
+                        minimap_fov[0].position = character_pos;
+                        minimap_fov[1].position = minimap_fov[0].position + left_fov_vec;
+                        minimap_fov[2].position = minimap_fov[0].position + right_fov_vec;
 
-                // Render minimap circle
-                {
-                    // Finalize minimap render texture
-                    minimap_rt.display();
-                    const sf::Vector2f minimap_rt_size{(float)minimap_rt.getSize().x, (float)minimap_rt.getSize().y};
-                    const sf::Vector2f minimap_pos_offset = tile_size * -(0.5f * sf::Vector2f{mapWidth, mapHeight} + sf::Vector2f{-(float)posY, -(float)posX});
-                    const sf::Vector2i minimap_rect_size{static_cast<int>(minimap_zoom * minimap_rt_size.x), static_cast<int>(minimap_zoom * minimap_rt_size.y)};
+                        // Character point is visible
+                        sf::Color fov_color = sf::Color(255, 255, 255, 60);
+                        minimap_fov[0].color = fov_color;
 
-                    // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
-                    minimap_circle.setTextureRect({std::min(std::max(static_cast<int>(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x), 0), static_cast<int>(minimap_rt_size.x - minimap_rect_size.x)),
-                                                          std::min(std::max(static_cast<int>(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y), 0), static_cast<int>(minimap_rt_size.y - minimap_rect_size.y)),
-                                                          minimap_rect_size.x, minimap_rect_size.y});
-                    rt.draw(minimap_circle);
-                }
+                        // Then it goes invisible towards the end
+                        fov_color.a = 0;
+                        for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
 
-                // Render compass
-                {
-                    rt.draw(compass_inner_shadow);
-                    rt.draw(compass);
-                    rt.draw(compass_ring);
+                        // Draw to minimap render texture
+                        minimap_rt.draw(minimap_fov);
+                    }
+
+                    // Draw compass character arrow
+                    {
+                        compass_arrow.setPosition(character_pos);
+                        compass_arrow.setRotation(character_dir_angle);
+                        minimap_rt.draw(compass_arrow);
+                    }
+
+                    // Render minimap circle
+                    {
+                        // Finalize minimap render texture
+                        minimap_rt.display();
+                        const sf::Vector2f minimap_rt_size{(float)minimap_rt.getSize().x, (float)minimap_rt.getSize().y};
+                        const sf::Vector2f minimap_pos_offset = tile_size * -(0.5f * sf::Vector2f{mapWidth, mapHeight} + sf::Vector2f{-(float)posY, -(float)posX});
+                        const sf::Vector2i minimap_rect_size{static_cast<int>(minimap_zoom * minimap_rt_size.x), static_cast<int>(minimap_zoom * minimap_rt_size.y)};
+
+                        // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
+                        minimap_circle.setTextureRect({std::min(std::max(static_cast<int>(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x), 0), static_cast<int>(minimap_rt_size.x - minimap_rect_size.x)),
+                                                              std::min(std::max(static_cast<int>(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y), 0), static_cast<int>(minimap_rt_size.y - minimap_rect_size.y)),
+                                                              minimap_rect_size.x, minimap_rect_size.y});
+                        rt.draw(minimap_circle);
+                    }
+
+                    // Render compass
+                    {
+                        rt.draw(compass_inner_shadow);
+                        rt.draw(compass);
+                        rt.draw(compass_ring);
+                    }
                 }
             }
 
@@ -555,6 +570,11 @@ int main() {
                 rt.display();
                 window.draw(rt_sprite);
                 window.display();
+            }
+
+            // Print FPS
+            {
+                //std::cout << 1 / elapsed.asSeconds() << std::endl;
             }
         }
     }
