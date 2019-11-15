@@ -161,6 +161,9 @@ int main() {
     minimap_circle.setPosition({10 + minimap_height * 0.5f, h - minimap_height * 0.5f - 10});
     minimap_circle.setFillColor(sf::Color(255, 255, 255, 200));
 
+    // Minimap tile size
+    const float tile_size = static_cast<float>(minimap_rt.getSize().y) / mapWidth;
+
     // COMPASS
     sf::Sprite compass(compass_texture);
     compass.setOrigin(compass_texture.getSize().x / 2, compass_texture.getSize().y / 2);
@@ -204,6 +207,11 @@ int main() {
     while(window.isOpen()) {
         sf::Time elapsed = clock.restart();
         total_timer += elapsed;
+
+        // Print FPS
+        {
+            //std::cout << 1 / elapsed.asSeconds() << std::endl;
+        }
 
         // Process events
         {
@@ -451,33 +459,12 @@ int main() {
                     }
                 }
             }
-        }
 
-        // Render
-        {
-            // Clear window and render texture
+            // Prepare render
             {
-                window.clear(sf::Color::Black);
-                rt.clear(sf::Color::Black);
-            }
-
-            // Draw everything
-            {
-                // Draw wall and floor
-                {
-                    rt.draw(wall_lines, &texture);
-                    rt.draw(floor_points, &texture);
-                }
-
                 // Minimap
                 {
-                    // Clear render texture
-                    {
-                        minimap_rt.clear(sf::Color::Black);
-                    }
-
                     // Tiles
-                    const float tile_size = static_cast<float>(minimap_rt.getSize().y) / mapWidth;
                     {
                         for(int m_x = 0, idx = 0; m_x < mapWidth; ++m_x) {
                             for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
@@ -502,12 +489,9 @@ int main() {
                                 for(int i = 0; i < 4; ++i) minimap_tiles[idx + i].color = color;
                             }
                         }
-
-                        // Draw to minimap render texture
-                        minimap_rt.draw(minimap_tiles, &texture);
                     }
 
-                    // Draw FOV in minimap
+                    // FOV
                     const sf::Vector2f character_pos{posY * tile_size,posX * tile_size};
                     const float character_dir_angle = -vecToAngle({dirX, dirY});
                     {
@@ -528,15 +512,65 @@ int main() {
                         // Then it goes invisible towards the end
                         fov_color.a = 0;
                         for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
+                    }
 
-                        // Draw to minimap render texture
+                    // Compass Arrow
+                    {
+                        compass_arrow.setPosition(character_pos);
+                        compass_arrow.setRotation(character_dir_angle);
+                    }
+
+                    // Minimap circle
+                    {
+                        const sf::Vector2f minimap_rt_size(minimap_rt.getSize().x, minimap_rt.getSize().y);
+                        const sf::Vector2f minimap_pos_offset = tile_size * -(0.5f * sf::Vector2f{mapWidth, mapHeight} + sf::Vector2f{-posY, -posX});
+                        const sf::Vector2i minimap_rect_size(minimap_zoom * minimap_rt_size.x, minimap_zoom * minimap_rt_size.y);
+
+                        // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
+                        minimap_circle.setTextureRect(sf::IntRect(
+                                std::min(std::max(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x, 0.0f), minimap_rt_size.x - minimap_rect_size.x),
+                                std::min(std::max(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y, 0.0f), minimap_rt_size.y - minimap_rect_size.y),
+                                minimap_rect_size.x, minimap_rect_size.y));
+                    }
+                }
+            }
+        }
+
+        // Render
+        {
+            // Clear window and render texture
+            {
+                window.clear(sf::Color::Black);
+                rt.clear(sf::Color::Black);
+            }
+
+            // Draw everything
+            {
+                // Draw wall and floor
+                {
+                    rt.draw(wall_lines, &texture);
+                    rt.draw(floor_points, &texture);
+                }
+
+                // Draw Minimap
+                {
+                    // Clear render texture
+                    {
+                        minimap_rt.clear(sf::Color::Black);
+                    }
+
+                    // Draw tiles to minimap render texture
+                    {
+                        minimap_rt.draw(minimap_tiles, &texture);
+                    }
+
+                    // Draw FOV to minimap render texture
+                    {
                         minimap_rt.draw(minimap_fov);
                     }
 
                     // Draw compass character arrow
                     {
-                        compass_arrow.setPosition(character_pos);
-                        compass_arrow.setRotation(character_dir_angle);
                         minimap_rt.draw(compass_arrow);
                     }
 
@@ -544,15 +578,6 @@ int main() {
                     {
                         // Finalize minimap render texture
                         minimap_rt.display();
-                        const sf::Vector2f minimap_rt_size(minimap_rt.getSize().x, minimap_rt.getSize().y);
-                        const sf::Vector2f minimap_pos_offset = tile_size * -(0.5f * sf::Vector2f{mapWidth, mapHeight} + sf::Vector2f{-posY, -posX});
-                        const sf::Vector2i minimap_rect_size(minimap_zoom * minimap_rt_size.x, minimap_zoom * minimap_rt_size.y);
-
-                        // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
-                        minimap_circle.setTextureRect(sf::IntRect(
-                            std::min(std::max(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x, 0.0f), minimap_rt_size.x - minimap_rect_size.x),
-                            std::min(std::max(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y, 0.0f), minimap_rt_size.y - minimap_rect_size.y),
-                            minimap_rect_size.x, minimap_rect_size.y));
 
                         // Draw minimap circle
                         rt.draw(minimap_circle);
@@ -572,11 +597,6 @@ int main() {
                 rt.display();
                 window.draw(rt_sprite);
                 window.display();
-            }
-
-            // Print FPS
-            {
-                //std::cout << 1 / elapsed.asSeconds() << std::endl;
             }
         }
     }
