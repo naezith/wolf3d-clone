@@ -230,7 +230,7 @@ int main() {
         lag += now - time_start;
         time_start = now;
 
-        // FPS Counter and
+        // FPS Counter
         float elapsed_time = clock.restart().asSeconds();
         fps_time_sum += elapsed_time;
         ++fps_capture_count;
@@ -345,7 +345,7 @@ int main() {
 
         // Prepare render
         {
-            // Prepare wall and floor
+            // Wall and floor
             {
                 // Clear floor points array
                 floor_points.clear();
