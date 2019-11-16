@@ -125,7 +125,7 @@ int main() {
     window.setMouseCursorGrabbed(true);
 
     // Vertical sync, might wanna disable
-    window.setVerticalSyncEnabled(true);
+    window.setVerticalSyncEnabled(false);
 
     // Prepare render texture
     sf::RenderTexture rt;
@@ -195,7 +195,8 @@ int main() {
     sf::VertexArray minimap_tiles{sf::Quads, mapWidth * mapHeight * 4};
     sf::VertexArray minimap_fov{sf::Triangles, 3};
     sf::VertexArray wall_lines(sf::Lines, w * 2);
-    sf::VertexArray floor_points(sf::Points); 
+    sf::VertexArray floor_points(sf::Points);
+    sf::Vertex floor_vertex;
     
     // Clock and Timer
     sf::Clock clock;
@@ -491,9 +492,10 @@ int main() {
 
                         // Prepare floor
                         {
-                            sf::Vertex vertex(sf::Vector2f(x - 1, y), floor_texture_offset + sf::Vector2f(floorTexX, floorTexY));
-                            setBrightness(vertex, currentDist, darkness_distance);
-                            floor_points.append(vertex);
+                            floor_vertex.position = sf::Vector2f(x - 1, y);
+                            floor_vertex.texCoords = floor_texture_offset + sf::Vector2f(floorTexX, floorTexY);
+                            setBrightness(floor_vertex, currentDist, darkness_distance);
+                            floor_points.append(floor_vertex);
                         }
                     }
                 }
