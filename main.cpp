@@ -102,12 +102,21 @@ namespace {
         else if(ang > 360.0f) ang -= 360.0f;
         return ang + 90;
     }
+
+    static void setColor(sf::Vertex& v, unsigned char value) {
+        v.color.r = v.color.g = v.color.b = value;
+    }
+
+    static void setColor(sf::Vertex& v, unsigned char value, unsigned char alpha) {
+        setColor(v, value);
+        v.color.a = alpha;
+    }
 }
 
 static void setBrightness(sf::Vertex& v, const float distance, const float max_distance) {
     const float darkness = std::max(std::min(max_brightness * distance / max_distance, max_brightness), 0.0f);
     const float brightness = max_brightness - darkness;
-    v.color = sf::Color(brightness, brightness, brightness);
+    setColor(v, brightness);
 }
 
 static sf::Vector2f get_texture_offset(const sf::Vector2i& tex_idx) {
@@ -524,8 +533,8 @@ int main() {
 
                             // Color
                             const float darkness = 150;
-                            sf::Color color = type == 0 ? sf::Color(darkness, darkness, darkness) : sf::Color::White;
-                            for(int i = 0; i < 4; ++i) minimap_tiles[idx + i].color = color;
+                            unsigned char color = type == 0 ? darkness : 255;
+                            for(int i = 0; i < 4; ++i) setColor(minimap_tiles[idx + i], color);
                         }
                     }
                 }
@@ -545,12 +554,11 @@ int main() {
                     minimap_fov[2].position = minimap_fov[0].position + right_fov_vec;
 
                     // Character point is visible
-                    sf::Color fov_color = sf::Color(255, 255, 255, 60);
-                    minimap_fov[0].color = fov_color;
+                    const unsigned char color = 255;
+                    setColor(minimap_fov[0], color, 60);
 
                     // Then it goes invisible towards the end
-                    fov_color.a = 0;
-                    for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
+                    for(int i = 1; i <= 2; ++i) setColor(minimap_fov[i], color, 0);
                 }
 
                 // Compass Arrow
