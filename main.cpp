@@ -7,8 +7,8 @@
 using namespace std::chrono_literals;
 
 // Constants
-static const int w = 1440;
-static const int h = 900;
+static const int w = 1920;
+static const int h = 1080;
 #define mapWidth 24
 #define mapHeight 24
 static const std::size_t tex_width = 256;
@@ -210,11 +210,12 @@ int main() {
     float planeX = 0, planeY = fov; // The 2d ray caster version of camera plane
 
     // Character bobbing timer
+    float bobbing_y_offset;
     float walking_timer = 0.0f;
 
     // Game loop
-    const float dt = 0.016f;
-    std::chrono::nanoseconds timestep(16ms), lag(0ns);
+    const float dt = 0.008f;
+    std::chrono::nanoseconds timestep(8ms), lag(0ns);
     auto time_start = std::chrono::high_resolution_clock::now();
     float total_timer = 0.0f;
 
@@ -295,7 +296,6 @@ int main() {
                 }
 
                 // Character movement
-                float bobbing_y_offset;
                 {
                     sf::Vector2f input_dir((sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
                                            (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
@@ -340,234 +340,234 @@ int main() {
                     minimap_circle.setRotation(vecToAngle({dirX, dirY}));
                     compass.setRotation(minimap_circle.getRotation());
                 }
+            }
+        }
 
-                // Prepare wall and floor
-                {
-                    // Clear floor points array
-                    floor_points.clear();
+        // Prepare render
+        {
+            // Prepare wall and floor
+            {
+                // Clear floor points array
+                floor_points.clear();
 
-                    // Raycasting algorithm, Loop every vertical line of the screen
-                    for(int x = 0, idx_vx = 0; x < w; ++x, idx_vx += 2) {
-                        // Calculate ray position and direction
-                        const float cameraX = 2.0f * x / w - 1; // X-coordinate in camera space
+                // Raycasting algorithm, Loop every vertical line of the screen
+                for(int x = 0, idx_vx = 0; x < w; ++x, idx_vx += 2) {
+                    // Calculate ray position and direction
+                    const float cameraX = 2.0f * x / w - 1; // X-coordinate in camera space
 
-                        const float rayDirX = dirX + planeX * cameraX;
-                        const float rayDirY = dirY + planeY * cameraX;
+                    const float rayDirX = dirX + planeX * cameraX;
+                    const float rayDirY = dirY + planeY * cameraX;
 
-                        // Length of ray from one x or y-side to next x or y-side
-                        const float deltaDistX = sqrt(1 + (rayDirY * rayDirY) / (rayDirX * rayDirX));
-                        const float deltaDistY = sqrt(1 + (rayDirX * rayDirX) / (rayDirY * rayDirY));
+                    // Length of ray from one x or y-side to next x or y-side
+                    const float deltaDistX = sqrt(1 + (rayDirY * rayDirY) / (rayDirX * rayDirX));
+                    const float deltaDistY = sqrt(1 + (rayDirX * rayDirX) / (rayDirY * rayDirY));
 
-                        // Calculate step and initial sideDist
-                        // Length of ray from current position to next x or y-side
-                        float sideDistX;
-                        float sideDistY;
+                    // Calculate step and initial sideDist
+                    // Length of ray from current position to next x or y-side
+                    float sideDistX;
+                    float sideDistY;
 
-                        // What direction to step in x or y-direction (either +1 or -1)
-                        int stepX;
-                        int stepY;
+                    // What direction to step in x or y-direction (either +1 or -1)
+                    int stepX;
+                    int stepY;
 
-                        // Which box of the map we're in
-                        int mapX = posX;
-                        int mapY = posY;
+                    // Which box of the map we're in
+                    int mapX = posX;
+                    int mapY = posY;
 
-                        // X-direction
-                        if(rayDirX < 0) {
-                            stepX = -1;
-                            sideDistX = (posX - mapX) * deltaDistX;
+                    // X-direction
+                    if(rayDirX < 0) {
+                        stepX = -1;
+                        sideDistX = (posX - mapX) * deltaDistX;
+                    }
+                    else {
+                        stepX = 1;
+                        sideDistX = (mapX + 1.0f - posX) * deltaDistX;
+                    }
+
+                    // Y-direction
+                    if(rayDirY < 0) {
+                        stepY = -1;
+                        sideDistY = (posY - mapY) * deltaDistY;
+                    }
+                    else {
+                        stepY = 1;
+                        sideDistY = (mapY + 1.0f - posY) * deltaDistY;
+                    }
+
+                    // Perform DDA
+                    int side; // Was a NS or a EW wall hit?
+                    int hit = 0; // Was there a wall hit?
+                    float perpWallDist;
+
+                    while(hit == 0) {
+                        // Jump to next map square, OR in X-direction, OR in Y-direction
+                        if(sideDistX < sideDistY) {
+                            sideDistX += deltaDistX;
+                            mapX += stepX;
+                            side = 0;
                         }
                         else {
-                            stepX = 1;
-                            sideDistX = (mapX + 1.0f - posX) * deltaDistX;
+                            sideDistY += deltaDistY;
+                            mapY += stepY;
+                            side = 1;
                         }
 
-                        // Y-direction
-                        if(rayDirY < 0) {
-                            stepY = -1;
-                            sideDistY = (posY - mapY) * deltaDistY;
-                        }
-                        else {
-                            stepY = 1;
-                            sideDistY = (mapY + 1.0f - posY) * deltaDistY;
-                        }
+                        // Check if ray has hit a wall
+                        if(worldMap[mapX][mapY] > 0) hit = 1;
+                    }
 
-                        // Perform DDA
-                        int side; // Was a NS or a EW wall hit?
-                        int hit = 0; // Was there a wall hit?
-                        float perpWallDist;
+                    // Calculate distance projected on camera direction (Euclidean distance will give fish-eye effect!)
+                    if(side == 0) {
+                        perpWallDist = std::fabs((mapX - posX + (1 - stepX) / 2) / rayDirX);
+                    }
+                    else {
+                        perpWallDist = std::fabs((mapY - posY + (1 - stepY) / 2) / rayDirY);
+                    }
 
-                        while(hit == 0) {
-                            // Jump to next map square, OR in X-direction, OR in Y-direction
-                            if(sideDistX < sideDistY) {
-                                sideDistX += deltaDistX;
-                                mapX += stepX;
-                                side = 0;
-                            }
-                            else {
-                                sideDistY += deltaDistY;
-                                mapY += stepY;
-                                side = 1;
-                            }
+                    // Calculate height of line to draw on screen
+                    const float lineHeight = std::abs(h / perpWallDist);
 
-                            // Check if ray has hit a wall
-                            if(worldMap[mapX][mapY] > 0) hit = 1;
-                        }
+                    // Calculate lowest and highest pixel to fill in current stripe
+                    const float drawStart = bobbing_y_offset - lineHeight * 0.5f + h * 0.5f;
+                    const float drawEnd = bobbing_y_offset + lineHeight * 0.5f + h * 0.5f;
 
-                        // Calculate distance projected on camera direction (Euclidean distance will give fish-eye effect!)
-                        if(side == 0) {
-                            perpWallDist = std::fabs((mapX - posX + (1 - stepX) / 2) / rayDirX);
-                        }
-                        else {
-                            perpWallDist = std::fabs((mapY - posY + (1 - stepY) / 2) / rayDirY);
-                        }
+                    // Calculate value of wallX
+                    float wallX; // Where exactly the wall was hit
+                    if(side == 0) wallX = posY + perpWallDist * rayDirY;
+                    else wallX = posX + perpWallDist * rayDirX;
+                    wallX -= floor((wallX));
 
-                        // Calculate height of line to draw on screen
-                        const float lineHeight = std::abs(h / perpWallDist);
+                    // X coordinate on the texture
+                    int texX = wallX * tex_width;
+                    if(side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
+                    if(side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
 
-                        // Calculate lowest and highest pixel to fill in current stripe
-                        const float drawStart = bobbing_y_offset - lineHeight * 0.5f + h * 0.5f;
-                        const float drawEnd = bobbing_y_offset + lineHeight * 0.5f + h * 0.5f;
+                    // Prepare wall line
+                    {
+                        auto offset = get_texture_offset(worldMap[mapX][mapY]);
+                        wall_lines[idx_vx + 0].texCoords = offset + sf::Vector2f(texX, 0);
+                        wall_lines[idx_vx + 1].texCoords = offset + sf::Vector2f(texX, tex_height);
+                        wall_lines[idx_vx + 0].position = sf::Vector2f(x, drawStart);
+                        wall_lines[idx_vx + 1].position = sf::Vector2f(x, drawEnd);
 
-                        // Calculate value of wallX
-                        float wallX; // Where exactly the wall was hit
-                        if(side == 0) wallX = posY + perpWallDist * rayDirY;
-                        else wallX = posX + perpWallDist * rayDirX;
-                        wallX -= floor((wallX));
+                        // Brightness
+                        const float distance = magnitude(sf::Vector2f(mapX - posX + (side == 1 ? wallX : 0), mapY - posY + (side == 0 ? wallX : 0)));
+                        setBrightness(wall_lines[idx_vx + 0], distance, darkness_distance);
+                        setBrightness(wall_lines[idx_vx + 1], distance, darkness_distance);
+                    }
 
-                        // X coordinate on the texture
-                        int texX = wallX * tex_width;
-                        if(side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
-                        if(side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
 
-                        // Prepare wall line
+                    // FLOOR CASTING
+                    float floorXWall, floorYWall; // X, Y position of the floor texel at the bottom of the wall
+
+                    // Four different wall directions possible
+                    if(side == 0 && rayDirX > 0) {
+                        floorXWall = mapX;
+                        floorYWall = mapY + wallX;
+                    }
+                    else if(side == 0 && rayDirX < 0) {
+                        floorXWall = mapX + 1.0f;
+                        floorYWall = mapY + wallX;
+                    }
+                    else if(side == 1 && rayDirY > 0) {
+                        floorXWall = mapX + wallX;
+                        floorYWall = mapY;
+                    }
+                    else {
+                        floorXWall = mapX + wallX;
+                        floorYWall = mapY + 1.0f;
+                    }
+
+                    // Draw the floor from drawEnd to the bottom of the screen
+                    for(int y = drawEnd + 1; y < h; ++y) {
+                        const float currentDist = h / (2.0f * (y - bobbing_y_offset) - h); //you could make a small lookup table for this instead
+                        const float weight = currentDist / perpWallDist;
+                        const float currentFloorX = weight * floorXWall + (1.0f - weight) * posX;
+                        const float currentFloorY = weight * floorYWall + (1.0f - weight) * posY;
+
+                        const int floorTexX = static_cast<int>(currentFloorX * tex_width) % tex_width;
+                        const int floorTexY = static_cast<int>(currentFloorY * tex_height) % tex_height;
+
+                        // Prepare floor
                         {
-                            auto offset = get_texture_offset(worldMap[mapX][mapY]);
-                            wall_lines[idx_vx + 0].texCoords = offset + sf::Vector2f(texX, 0);
-                            wall_lines[idx_vx + 1].texCoords = offset + sf::Vector2f(texX, tex_height);
-                            wall_lines[idx_vx + 0].position = sf::Vector2f(x, drawStart);
-                            wall_lines[idx_vx + 1].position = sf::Vector2f(x, drawEnd);
-
-                            // Brightness
-                            const float distance = magnitude(sf::Vector2f(mapX - posX + (side == 1 ? wallX : 0), mapY - posY + (side == 0 ? wallX : 0)));
-                            setBrightness(wall_lines[idx_vx + 0], distance, darkness_distance);
-                            setBrightness(wall_lines[idx_vx + 1], distance, darkness_distance);
+                            sf::Vertex vertex(sf::Vector2f(x - 1, y), floor_texture_offset + sf::Vector2f(floorTexX, floorTexY));
+                            setBrightness(vertex, currentDist, darkness_distance);
+                            floor_points.append(vertex);
                         }
+                    }
+                }
+            }
 
+            // Minimap
+            {
+                // Tiles
+                {
+                    for(int m_x = 0, idx = 0; m_x < mapWidth; ++m_x) {
+                        for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
+                            const int type = worldMap[m_y][m_x];
 
-                        // FLOOR CASTING
-                        float floorXWall, floorYWall; // X, Y position of the floor texel at the bottom of the wall
+                            // Position
+                            minimap_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
+                            minimap_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
+                            minimap_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                            minimap_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
 
-                        // Four different wall directions possible
-                        if(side == 0 && rayDirX > 0) {
-                            floorXWall = mapX;
-                            floorYWall = mapY + wallX;
-                        }
-                        else if(side == 0 && rayDirX < 0) {
-                            floorXWall = mapX + 1.0f;
-                            floorYWall = mapY + wallX;
-                        }
-                        else if(side == 1 && rayDirY > 0) {
-                            floorXWall = mapX + wallX;
-                            floorYWall = mapY;
-                        }
-                        else {
-                            floorXWall = mapX + wallX;
-                            floorYWall = mapY + 1.0f;
-                        }
+                            // Texture
+                            const auto offset = get_texture_offset(type);
+                            minimap_tiles[idx + 0].texCoords = { offset.x, offset.y };
+                            minimap_tiles[idx + 1].texCoords = { offset.x + tex_width, offset.y };
+                            minimap_tiles[idx + 2].texCoords = { offset.x + tex_width, offset.y + tex_height };
+                            minimap_tiles[idx + 3].texCoords = { offset.x, offset.y + tex_height };
 
-                        // Draw the floor from drawEnd to the bottom of the screen
-                        for(int y = drawEnd + 1; y < h; ++y) {
-                            const float currentDist = h / (2.0f * (y - bobbing_y_offset) - h); //you could make a small lookup table for this instead
-                            const float weight = currentDist / perpWallDist;
-                            const float currentFloorX = weight * floorXWall + (1.0f - weight) * posX;
-                            const float currentFloorY = weight * floorYWall + (1.0f - weight) * posY;
-
-                            const int floorTexX = static_cast<int>(currentFloorX * tex_width) % tex_width;
-                            const int floorTexY = static_cast<int>(currentFloorY * tex_height) % tex_height;
-
-                            // Prepare floor
-                            {
-                                sf::Vertex vertex(sf::Vector2f(x - 1, y), floor_texture_offset + sf::Vector2f(floorTexX, floorTexY));
-                                setBrightness(vertex, currentDist, darkness_distance);
-                                floor_points.append(vertex);
-                            }
+                            // Color
+                            const float darkness = 150;
+                            sf::Color color = type == 0 ? sf::Color(darkness, darkness, darkness) : sf::Color::White;
+                            for(int i = 0; i < 4; ++i) minimap_tiles[idx + i].color = color;
                         }
                     }
                 }
 
-                // Prepare render
+                // FOV
+                const sf::Vector2f character_pos{posY * tile_size,posX * tile_size};
+                const float character_dir_angle = -vecToAngle({dirX, dirY});
                 {
-                    // Minimap
-                    {
-                        // Tiles
-                        {
-                            for(int m_x = 0, idx = 0; m_x < mapWidth; ++m_x) {
-                                for(int m_y = 0; m_y < mapHeight; ++m_y, idx += 4) {
-                                    const int type = worldMap[m_y][m_x];
+                    // Angles
+                    const float fov_arm_dist = tile_size * darkness_distance * (minimap_height / minimap_rt.getSize().x) / minimap_zoom;
+                    const sf::Vector2f left_fov_vec = angleToVec(character_dir_angle - fov_degrees * 0.5f) * fov_arm_dist;
+                    const sf::Vector2f right_fov_vec = angleToVec(character_dir_angle + fov_degrees * 0.5f) * fov_arm_dist;
 
-                                    // Position
-                                    minimap_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
-                                    minimap_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
-                                    minimap_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
-                                    minimap_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
+                    // Positions
+                    minimap_fov[0].position = character_pos;
+                    minimap_fov[1].position = minimap_fov[0].position + left_fov_vec;
+                    minimap_fov[2].position = minimap_fov[0].position + right_fov_vec;
 
-                                    // Texture
-                                    const auto offset = get_texture_offset(type);
-                                    minimap_tiles[idx + 0].texCoords = { offset.x, offset.y };
-                                    minimap_tiles[idx + 1].texCoords = { offset.x + tex_width, offset.y };
-                                    minimap_tiles[idx + 2].texCoords = { offset.x + tex_width, offset.y + tex_height };
-                                    minimap_tiles[idx + 3].texCoords = { offset.x, offset.y + tex_height };
+                    // Character point is visible
+                    sf::Color fov_color = sf::Color(255, 255, 255, 60);
+                    minimap_fov[0].color = fov_color;
 
-                                    // Color
-                                    const float darkness = 150;
-                                    sf::Color color = type == 0 ? sf::Color(darkness, darkness, darkness) : sf::Color::White;
-                                    for(int i = 0; i < 4; ++i) minimap_tiles[idx + i].color = color;
-                                }
-                            }
-                        }
+                    // Then it goes invisible towards the end
+                    fov_color.a = 0;
+                    for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
+                }
 
-                        // FOV
-                        const sf::Vector2f character_pos{posY * tile_size,posX * tile_size};
-                        const float character_dir_angle = -vecToAngle({dirX, dirY});
-                        {
-                            // Angles
-                            const float fov_arm_dist = tile_size * darkness_distance * (minimap_height / minimap_rt.getSize().x) / minimap_zoom;
-                            const sf::Vector2f left_fov_vec = angleToVec(character_dir_angle - fov_degrees * 0.5f) * fov_arm_dist;
-                            const sf::Vector2f right_fov_vec = angleToVec(character_dir_angle + fov_degrees * 0.5f) * fov_arm_dist;
+                // Compass Arrow
+                {
+                    compass_arrow.setPosition(character_pos);
+                    compass_arrow.setRotation(character_dir_angle);
+                }
 
-                            // Positions
-                            minimap_fov[0].position = character_pos;
-                            minimap_fov[1].position = minimap_fov[0].position + left_fov_vec;
-                            minimap_fov[2].position = minimap_fov[0].position + right_fov_vec;
+                // Minimap circle
+                {
+                    const sf::Vector2f minimap_rt_size(minimap_rt.getSize().x, minimap_rt.getSize().y);
+                    const sf::Vector2f minimap_pos_offset = tile_size * -(0.5f * sf::Vector2f{mapWidth, mapHeight} + sf::Vector2f{-posY, -posX});
+                    const sf::Vector2i minimap_rect_size(minimap_zoom * minimap_rt_size.x, minimap_zoom * minimap_rt_size.y);
 
-                            // Character point is visible
-                            sf::Color fov_color = sf::Color(255, 255, 255, 60);
-                            minimap_fov[0].color = fov_color;
-
-                            // Then it goes invisible towards the end
-                            fov_color.a = 0;
-                            for(int i = 1; i <= 2; ++i) minimap_fov[i].color = fov_color;
-                        }
-
-                        // Compass Arrow
-                        {
-                            compass_arrow.setPosition(character_pos);
-                            compass_arrow.setRotation(character_dir_angle);
-                        }
-
-                        // Minimap circle
-                        {
-                            const sf::Vector2f minimap_rt_size(minimap_rt.getSize().x, minimap_rt.getSize().y);
-                            const sf::Vector2f minimap_pos_offset = tile_size * -(0.5f * sf::Vector2f{mapWidth, mapHeight} + sf::Vector2f{-posY, -posX});
-                            const sf::Vector2i minimap_rect_size(minimap_zoom * minimap_rt_size.x, minimap_zoom * minimap_rt_size.y);
-
-                            // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
-                            minimap_circle.setTextureRect(sf::IntRect(
-                                    std::min(std::max(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x, 0.0f), minimap_rt_size.x - minimap_rect_size.x),
-                                    std::min(std::max(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y, 0.0f), minimap_rt_size.y - minimap_rect_size.y),
-                                    minimap_rect_size.x, minimap_rect_size.y));
-                        }
-                    }
+                    // TODO: Character is not centered at borders. Instead of limiting the edges, we can have a bigger RenderTexture so minimap won't ever reach to the edges
+                    minimap_circle.setTextureRect(sf::IntRect(
+                            std::min(std::max(minimap_pos_offset.x + (1 - minimap_zoom) * 0.5f * minimap_rt_size.x, 0.0f), minimap_rt_size.x - minimap_rect_size.x),
+                            std::min(std::max(minimap_pos_offset.y + (1 - minimap_zoom) * 0.5f * minimap_rt_size.y, 0.0f), minimap_rt_size.y - minimap_rect_size.y),
+                            minimap_rect_size.x, minimap_rect_size.y));
                 }
             }
         }
