@@ -219,6 +219,19 @@ int main() {
     float dirX = -1, dirY = 0; // Initial direction vector
     float planeX = 0, planeY = fov; // The 2d ray caster version of camera plane
 
+    // Move camera
+    auto moveCamera = [&dirX, &dirY, &planeX, &planeY](const float amount, const float dt) {
+        const float rotSpeed = amount * dt; // Constant value is in radians/second
+
+        // Both camera direction and camera plane must be rotated
+        const float oldDirX = dirX;
+        dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
+        dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
+        const float oldPlaneX = planeX;
+        planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
+        planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+    };
+
     // Character bobbing timer
     float bobbing_y_offset;
     float walking_timer = 0.0f;
@@ -283,19 +296,6 @@ int main() {
                     sf::Vector2i pos = sf::Mouse::getPosition(window);
                     sf::Vector2i center{w / 2, h / 2};
                     sf::Mouse::setPosition(center, window);
-
-                    // Move camera
-                    auto moveCamera = [&dirX, &dirY, &planeX, &planeY](const float amount, const float dt) {
-                        const float rotSpeed = amount * dt; // Constant value is in radians/second
-
-                        // Both camera direction and camera plane must be rotated
-                        const float oldDirX = dirX;
-                        dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
-                        dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
-                        const float oldPlaneX = planeX;
-                        planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
-                        planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
-                    };
 
                     moveCamera(mouse_sensitivity * (pos.x - center.x), dt);
 
