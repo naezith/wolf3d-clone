@@ -519,10 +519,10 @@ int main() {
                             const int type = worldMap[m_y][m_x];
 
                             // Position
-                            minimap_tiles[idx + 0].position = sf::Vector2f{ m_x * tile_size, m_y * tile_size };
-                            minimap_tiles[idx + 1].position = sf::Vector2f{ (m_x + 1) * tile_size, m_y * tile_size };
-                            minimap_tiles[idx + 2].position = sf::Vector2f{ (m_x + 1) * tile_size, (m_y + 1) * tile_size };
-                            minimap_tiles[idx + 3].position = sf::Vector2f{ m_x * tile_size, (m_y + 1) * tile_size };
+                            minimap_tiles[idx + 0].position = { m_x * tile_size, m_y * tile_size };
+                            minimap_tiles[idx + 1].position = { (m_x + 1) * tile_size, m_y * tile_size };
+                            minimap_tiles[idx + 2].position = { (m_x + 1) * tile_size, (m_y + 1) * tile_size };
+                            minimap_tiles[idx + 3].position = { m_x * tile_size, (m_y + 1) * tile_size };
 
                             // Texture
                             const auto offset = get_texture_offset(type);
