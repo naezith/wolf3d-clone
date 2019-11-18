@@ -323,8 +323,11 @@ int main() {
 
                         // Move
                         auto move = [&posX, &posY](const sf::Vector2f& vec) {
-                            if(worldMap[static_cast<int>(posX + vec.x)][static_cast<int>(posY)] == 0) posX += vec.x;
-                            if(worldMap[static_cast<int>(posX)][static_cast<int>(posY + vec.y)] == 0) posY += vec.y;
+                            static const float dist_multiplier = 12.0f;
+                            sf::Vector2i curr_pos(posX, posY);
+                            sf::Vector2i future_pos(posX + dist_multiplier * vec.x, posY + dist_multiplier * vec.y);
+                            if(worldMap[future_pos.x][curr_pos.y] == 0) posX += vec.x;
+                            if(worldMap[curr_pos.x][future_pos.y] == 0) posY += vec.y;
                         };
 
                         if(input_dir.y != 0) {
