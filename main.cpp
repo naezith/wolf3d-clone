@@ -7,8 +7,8 @@
 using namespace std::chrono_literals;
 
 // Constants
-static const int w = 1440;
-static const int h = 900;
+static const int w = 1920;
+static const int h = 1080;
 #define mapWidth 24
 #define mapHeight 24
 static const std::size_t tex_width = 256;
