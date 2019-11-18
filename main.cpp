@@ -7,8 +7,8 @@
 using namespace std::chrono_literals;
 
 // Constants
-static const int w = 1440;
-static const int h = 900;
+static const int w = 2550;
+static const int h = 1400;
 #define mapWidth 24
 #define mapHeight 24
 static const std::size_t tex_width = 256;
@@ -16,7 +16,7 @@ static const std::size_t tex_height = 256;
 static const float darkness_distance = 8.0f;
 static const float fov_degrees = 103;
 static const float fov = fov_degrees / 100.0f;
-static const float mouse_sensitivity = 0.15f;
+static const float mouse_sensitivity = 0.00125;
 static const float minimap_zoom = 0.5f;
 static const float movement_speed = 5.0f;
 static const float max_brightness = 90.0f;
@@ -132,9 +132,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(w, h), "Antara Gaming SDK - Wolf3D");
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
-
-    // Vertical sync, might wanna disable
-    window.setVerticalSyncEnabled(true);
+    sf::Vector2i window_center{w / 2, h / 2};
 
     // Prepare render texture
     sf::RenderTexture rt;
@@ -235,6 +233,7 @@ int main() {
     // Character bobbing timer
     float bobbing_y_offset;
     float walking_timer = 0.0f;
+    sf::Vector2i mouse_prev_pos = sf::Mouse::getPosition(window);
 
     // Game loop
     const float dt = 0.008f;
@@ -271,9 +270,9 @@ int main() {
             fps_text.setString(fps_str);
         }
 
+
         // Update loop
         while(lag >= timestep) {
-            //std::cout << "Update: " << lag.count() << std::endl;
             lag -= timestep;
             total_timer += dt;
 
@@ -285,20 +284,22 @@ int main() {
                     if (event.type == sf::Event::Closed ||
                         (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
                         window.close();
+                    // Mouse
+                    else if(event.type == sf::Event::MouseMoved) {
+                        sf::Vector2i curr{event.mouseMove.x, event.mouseMove.y};
+                        moveCamera(mouse_sensitivity * (curr.x - mouse_prev_pos.x), 1);
+                        mouse_prev_pos = curr;
+                    }
                 }
+
+                // Center mouse
+                sf::Mouse::setPosition(mouse_prev_pos = window_center, window);
             }
 
             // Update everything
             {
                 // Camera movement
                 {
-                    // Mouse
-                    sf::Vector2i pos = sf::Mouse::getPosition(window);
-                    sf::Vector2i center{w / 2, h / 2};
-                    sf::Mouse::setPosition(center, window);
-
-                    moveCamera(mouse_sensitivity * (pos.x - center.x), dt);
-
                     // Keyboard
                     float input_dir = sf::Keyboard::isKeyPressed(sf::Keyboard::Right) - sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
 
