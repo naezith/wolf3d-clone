@@ -299,17 +299,10 @@ int main() {
 
             // Update everything
             {
-                // Camera movement
-                {
-                    // Keyboard
-                    float input_dir = sf::Keyboard::isKeyPressed(sf::Keyboard::Right) - sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
-
-                    if(input_dir != 0) moveCamera(input_dir * 3, dt);
-                }
-
                 // Character movement
                 {
-                    sf::Vector2f input_dir((sf::Keyboard::isKeyPressed(sf::Keyboard::D) - (sf::Keyboard::isKeyPressed(sf::Keyboard::A))),
+                    sf::Vector2f input_dir((sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) -
+                                            (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)),
                                            (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
                                             (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)));
 
