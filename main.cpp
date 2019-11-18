@@ -7,8 +7,8 @@
 using namespace std::chrono_literals;
 
 // Constants
-static const int w = 2550;
-static const int h = 1400;
+static const int w = 1440;
+static const int h = 900;
 #define mapWidth 24
 #define mapHeight 24
 static const std::size_t tex_width = 256;
@@ -130,6 +130,7 @@ static sf::Vector2f get_texture_offset(const int type) {
 int main() {
     // Prepare window
     sf::RenderWindow window(sf::VideoMode(w, h), "Antara Gaming SDK - Wolf3D");
+    window.setVerticalSyncEnabled(false);
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
     sf::Vector2i window_center{w / 2, h / 2};
