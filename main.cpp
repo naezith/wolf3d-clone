@@ -7,8 +7,8 @@
 using namespace std::chrono_literals;
 
 // Constants
-static const int w = 1920;
-static const int h = 1080;
+static const int w = 1440;
+static const int h = 900;
 #define mapWidth 24
 #define mapHeight 24
 static const std::size_t tex_width = 256;
@@ -16,7 +16,7 @@ static const std::size_t tex_height = 256;
 static const float darkness_distance = 8.0f;
 static const float fov_degrees = 103;
 static const float fov = fov_degrees / 100.0f;
-static const float mouse_sensitivity = 0.3f;
+static const float mouse_sensitivity = 0.15f;
 static const float minimap_zoom = 0.5f;
 static const float movement_speed = 5.0f;
 static const float max_brightness = 90.0f;
@@ -134,7 +134,7 @@ int main() {
     window.setMouseCursorGrabbed(true);
 
     // Vertical sync, might wanna disable
-    window.setVerticalSyncEnabled(false);
+    window.setVerticalSyncEnabled(true);
 
     // Prepare render texture
     sf::RenderTexture rt;
