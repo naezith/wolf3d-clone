@@ -20,7 +20,6 @@ static const float mouse_sensitivity = 0.00125;
 static const float minimap_zoom = 0.5f;
 static const float movement_speed = 5.0f;
 static const float max_brightness = 90.0f;
-static const sf::Vector2i floor_texture_index{0, 0};
 static const sf::Vector2i wall_texture_indexes[] = {
         sf::Vector2i{0, 0}, // 0
         sf::Vector2i{2, 0}, // 1
@@ -598,7 +597,37 @@ int main() {
 
             // Draw everything
             {
-                // Draw wall and floor
+                // Draw sky
+                {
+                    sf::VertexArray floor(sf::Quads, 4);
+                    floor[0].position = {0.0f, bobbing_y_offset};
+                    floor[1].position = {w, bobbing_y_offset};
+                    floor[2].position = {w, bobbing_y_offset + h * 0.51f};
+                    floor[3].position = {0.0f, bobbing_y_offset + h * 0.51f};
+                    floor[2].color = floor[3].color = sf::Color{21, 12, 7};
+                    floor[0].color = floor[1].color = sf::Color{3, 6, 16};
+                    rt.draw(floor);
+                }
+
+                // Draw floor
+                {
+                    sf::VertexArray floor(sf::Quads, 4);
+                    floor[0].position = {0.0f, bobbing_y_offset + h * 0.5f};
+                    floor[1].position = {w, bobbing_y_offset + h * 0.5f};
+                    floor[2].position = {w, bobbing_y_offset + h * 1.1f};
+                    floor[3].position = {0.0f, bobbing_y_offset + h * 1.1f};
+                    sf::Color c{27, 24, 24};
+                    floor[2].color = floor[3].color = c;
+                    float decrease = 0.f;
+                    c.r = c.r * decrease;
+                    c.g = c.g * decrease;
+                    c.b = c.b * decrease;
+                    floor[0].color = floor[1].color = c;
+
+                    rt.draw(floor);
+                }
+
+                // Walls
                 {
                     rt.draw(wall_lines, &texture);
                 }
