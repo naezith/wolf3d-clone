@@ -168,9 +168,9 @@ namespace {
     }
 }
 
-static void setBrightness(sf::Vertex& v, const float distance, const float max_distance) {
-    const float darkness = std::max(std::min(max_brightness * distance / max_distance, max_brightness), 0.0f);
-    const float brightness = max_brightness - darkness;
+static void setBrightness(sf::Vertex& v, const float distance, const float max_distance, const float brightness_cap = max_brightness) {
+    const float darkness = std::max(std::min(brightness_cap * distance / max_distance, brightness_cap), 0.0f);
+    const float brightness = brightness_cap - darkness;
     setColor(v, brightness);
 }
 
@@ -195,11 +195,10 @@ int main() {
     rt.create(w, h);
     sf::Sprite rt_sprite(rt.getTexture());
 
-    // Wall and floor textures
+    // Wall textures
     sf::Texture texture;
     texture.setSmooth(true);
     texture.loadFromFile("csgo.png");
-    sf::Vector2f floor_texture_offset{get_texture_offset(floor_texture_index)};
 
     // Compass Textures
     sf::Texture compass_texture;
@@ -258,9 +257,7 @@ int main() {
     sf::VertexArray minimap_tiles{sf::Quads, mapWidth * mapHeight * 4};
     sf::VertexArray minimap_fov{sf::Triangles, 3};
     sf::VertexArray wall_lines(sf::Lines, w * 2);
-    sf::VertexArray floor_points(sf::Points);
-    sf::Vertex floor_vertex;
-    
+
     // Clock and Timer
     sf::Clock clock;
     sf::Text fps_text;
@@ -408,11 +405,8 @@ int main() {
 
         // Prepare render
         {
-            // Wall and floor
+            // Wall
             {
-                // Clear floor points array
-                floor_points.clear();
-
                 // Raycasting algorithm, Loop every vertical line of the screen
                 for(int x = 0, idx_vx = 0; x < w; ++x, idx_vx += 2) {
                     // Calculate ray position and direction
@@ -519,47 +513,6 @@ int main() {
                         setBrightness(wall_lines[idx_vx + 0], distance, darkness_distance);
                         setBrightness(wall_lines[idx_vx + 1], distance, darkness_distance);
                     }
-
-
-                    // FLOOR CASTING
-                    float floorXWall, floorYWall; // X, Y position of the floor texel at the bottom of the wall
-
-                    // Four different wall directions possible
-                    if(side == 0 && rayDirX > 0) {
-                        floorXWall = mapX;
-                        floorYWall = mapY + wallX;
-                    }
-                    else if(side == 0 && rayDirX < 0) {
-                        floorXWall = mapX + 1.0f;
-                        floorYWall = mapY + wallX;
-                    }
-                    else if(side == 1 && rayDirY > 0) {
-                        floorXWall = mapX + wallX;
-                        floorYWall = mapY;
-                    }
-                    else {
-                        floorXWall = mapX + wallX;
-                        floorYWall = mapY + 1.0f;
-                    }
-
-                    // Draw the floor from drawEnd to the bottom of the screen
-                    for(int y = drawEnd + 1; y < h; ++y) {
-                        const float currentDist = h / (2.0f * (y - bobbing_y_offset) - h); //you could make a small lookup table for this instead
-                        const float weight = currentDist / perpWallDist;
-                        const float currentFloorX = weight * floorXWall + (1.0f - weight) * posX;
-                        const float currentFloorY = weight * floorYWall + (1.0f - weight) * posY;
-
-                        const int floorTexX = static_cast<int>(currentFloorX * tex_width) % tex_width;
-                        const int floorTexY = static_cast<int>(currentFloorY * tex_height) % tex_height;
-
-                        // Prepare floor
-                        {
-                            floor_vertex.position = sf::Vector2f(x - 1, y);
-                            floor_vertex.texCoords = floor_texture_offset + sf::Vector2f(floorTexX, floorTexY);
-                            setBrightness(floor_vertex, currentDist, darkness_distance);
-                            floor_points.append(floor_vertex);
-                        }
-                    }
                 }
             }
 
@@ -648,7 +601,6 @@ int main() {
                 // Draw wall and floor
                 {
                     rt.draw(wall_lines, &texture);
-                    rt.draw(floor_points, &texture);
                 }
 
                 // Draw Minimap
