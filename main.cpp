@@ -223,6 +223,14 @@ int main() {
         }
     };
 
+    auto sound_destroy = [&ambient, &playing_sounds, &sound_cleanup] () {
+        ambient.stop();
+
+        for(auto& snd : playing_sounds) snd.stop();
+
+        sound_cleanup();
+    };
+
     // Prepare window
     sf::RenderWindow window(sf::VideoMode(w, h), "Antara Gaming SDK - Wolf3D");
     window.setVerticalSyncEnabled(false);
@@ -742,5 +750,7 @@ int main() {
         }
     }
 
+    sound_destroy();
+    
     return EXIT_SUCCESS;
 }
