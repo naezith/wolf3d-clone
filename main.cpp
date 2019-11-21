@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <chrono>
+#include <unordered_map>
 #include <random>
 
 using namespace std::chrono_literals;
@@ -193,6 +194,28 @@ static sf::Vector2f get_texture_offset(const int type) {
 }
 
 int main() {
+    std::unordered_map<std::string, sf::SoundBuffer> sound_buffers;
+    sound_buffers["walk1"].loadFromFile("walk1.wav");
+    sound_buffers["walk2"].loadFromFile("walk2.wav");
+    sound_buffers["walk3"].loadFromFile("walk3.wav");
+    sound_buffers["walk4"].loadFromFile("walk4.wav");
+    std::vector<sf::Sound> playing_sounds;
+
+    auto play_sound = [&playing_sounds, &sound_buffers](const std::string& name, float pitch = 1.0f, float volume = 1.0f) {
+        playing_sounds.emplace_back(sound_buffers[name]);
+        sf::Sound& snd = playing_sounds.back();
+        snd.setPitch(pitch);
+        snd.setVolume(volume * 100.0f);
+        snd.play();
+    };
+
+    auto sound_cleanup = [&playing_sounds]() {
+        for(auto iter = playing_sounds.begin(); iter != playing_sounds.end();) {
+            if(iter->getStatus() == sf::Sound::Stopped) iter = playing_sounds.erase(iter);
+            else ++iter;
+        }
+    };
+
     // Prepare window
     sf::RenderWindow window(sf::VideoMode(w, h), "Antara Gaming SDK - Wolf3D");
     window.setVerticalSyncEnabled(false);
@@ -372,7 +395,20 @@ int main() {
                     {
                         bool moving = input_dir.x != 0 || input_dir.y != 0;
                         if(moving) walking_timer += dt;
-                        bobbing_y_offset = h * (moving ? 0.008 : 0.004) * sin(14.0f * walking_timer + 2.0f * total_timer);
+                        float sin_val = sin(17.0f * walking_timer + 2.0f * total_timer);
+                        bobbing_y_offset = h * (moving ? 0.008 : 0.004) * sin_val;
+
+                        // Walking sound effect
+                        // When bobbing reaches to bottom, play walk sound once
+                        static bool walk_played = false;
+                        if(sin_val < -0.98f) {
+                            if(!walk_played) {
+                                walk_played = true;
+                                if(moving)
+                                    play_sound("walk" + std::to_string(int(std::floor(random_float(1, 4 + 1)))), random_float(0.75f, 1.25f));
+                            }
+                        }
+                        else walk_played = false;
                     }
 
                     // Move forward or back
@@ -411,6 +447,8 @@ int main() {
                     compass.setRotation(minimap_circle.getRotation());
                 }
             }
+
+            sound_cleanup();
         }
 
         // Prepare render
