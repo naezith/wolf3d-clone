@@ -243,6 +243,17 @@ int main() {
     rt.create(w, h);
     sf::Sprite rt_sprite(rt.getTexture());
 
+    // Portal
+    sf::Texture portal_texture;
+    portal_texture.setSmooth(true);
+    portal_texture.loadFromFile("portal.png");
+    sf::Sprite portal_sprite(portal_texture);
+    portal_sprite.setOrigin(portal_texture.getSize().x * 0.5f, portal_texture.getSize().y * 0.5f);
+    portal_sprite.setPosition(portal_sprite.getOrigin());
+    sf::RenderTexture portal_rt;
+    portal_rt.create(portal_texture.getSize().x, portal_texture.getSize().y);
+
+
     // Wall textures
     sf::Texture texture;
     texture.setSmooth(true);
@@ -463,6 +474,11 @@ int main() {
                     minimap_circle.setRotation(vecToAngle({dirX, dirY}));
                     compass.setRotation(minimap_circle.getRotation());
                 }
+
+                // Update portal
+                {
+                    portal_sprite.setRotation(portal_sprite.getRotation() + 120.0f * dt);
+                }
             }
 
             sound_cleanup();
@@ -676,6 +692,12 @@ int main() {
                 c.b = c.b * decrease;
                 floor[0].color = floor[1].color = c;
             }
+
+            // Portal
+            {
+                portal_rt.clear(sf::Color::Transparent);
+                portal_rt.draw(portal_sprite);
+            }
         }
 
         // Render
@@ -701,6 +723,12 @@ int main() {
                 // Walls
                 {
                     rt.draw(wall_lines, &texture);
+                }
+
+                // Portal
+                {
+                    sf::Sprite portal_rt_sprite(portal_rt.getTexture());
+                    rt.draw(portal_rt_sprite);
                 }
 
                 // Draw Minimap
