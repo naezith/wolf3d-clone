@@ -3,8 +3,19 @@
 #include <iostream>
 #include <cmath>
 #include <chrono>
+#include <random>
 
 using namespace std::chrono_literals;
+
+// Random number generator
+namespace {
+    std::random_device rd;  // Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+    float random_float(float lower, float higher) {
+        std::uniform_real_distribution<float> dist(lower, higher);
+        return dist(gen);
+    }
+}
 
 // Constants
 static const int w = 1920;
