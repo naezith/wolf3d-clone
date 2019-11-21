@@ -194,6 +194,13 @@ static sf::Vector2f get_texture_offset(const int type) {
 }
 
 int main() {
+    // Ambient
+    sf::Music ambient;
+    ambient.openFromFile("ambient.ogg");
+    ambient.setLoop(true);
+    ambient.play();
+
+    // Sounds
     std::unordered_map<std::string, sf::SoundBuffer> sound_buffers;
     sound_buffers["walk1"].loadFromFile("walk1.wav");
     sound_buffers["walk2"].loadFromFile("walk2.wav");
