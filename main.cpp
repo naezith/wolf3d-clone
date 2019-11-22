@@ -30,7 +30,7 @@ static const float fov_degrees = 103;
 static const float fov = fov_degrees / 100.0f;
 static const float mouse_sensitivity = 0.00125;
 static const float minimap_zoom = 0.5f;
-static const float movement_speed = 5.0f;
+static const float movement_speed = 3.5f;
 static const float max_brightness = 90.0f;
 static const sf::Vector2i wall_texture_indexes[] = {
         sf::Vector2i{0, 0}, // 0
