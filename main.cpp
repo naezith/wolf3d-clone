@@ -41,6 +41,7 @@ static const sf::Vector2i wall_texture_indexes[] = {
         sf::Vector2i{1, 1}, // 5
 };
 
+sf::Vector2f portal_position{12.5f, 12.5f};
 static const int worldMap[mapWidth][mapHeight] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 1, 1, 1},
@@ -252,7 +253,8 @@ int main() {
     portal_sprite.setPosition(portal_sprite.getOrigin());
     sf::RenderTexture portal_rt;
     portal_rt.create(portal_texture.getSize().x, portal_texture.getSize().y);
-
+    //1D Zbuffer
+    float ZBuffer[w];
 
     // Wall textures
     sf::Texture texture;
@@ -318,6 +320,8 @@ int main() {
     sf::VertexArray minimap_tiles{sf::Quads, mapWidth * mapHeight * 4};
     sf::VertexArray minimap_fov{sf::Triangles, 3};
     sf::VertexArray wall_lines(sf::Lines, w * 2);
+    sf::VertexArray portal_lines(sf::Lines);
+    sf::Vertex portal_vertex;
 
     // Clock and Timer
     sf::Clock clock;
@@ -581,6 +585,9 @@ int main() {
                     if(side == 0 && rayDirX > 0) texX = tex_width - texX - 1;
                     if(side == 1 && rayDirY < 0) texX = tex_height - texX - 1;
 
+                    // Save distance to ZBuffer
+                    ZBuffer[x] = perpWallDist;
+
                     // Prepare wall line
                     {
                         auto offset = get_texture_offset(worldMap[mapX][mapY]);
@@ -695,8 +702,78 @@ int main() {
 
             // Portal
             {
-                portal_rt.clear(sf::Color::Transparent);
-                portal_rt.draw(portal_sprite);
+                // Refresh the rotated portal texture
+                {
+                    portal_rt.clear(sf::Color::Transparent);
+                    portal_rt.draw(portal_sprite);
+                    portal_rt.display();
+                }
+
+                // Prepare lines
+                portal_lines.clear();
+
+                // Translate sprite position to relative to camera
+                float spriteX = portal_position.x - posX;
+                float spriteY = portal_position.y - posY;
+
+                // Transform sprite with the inverse camera matrix
+                // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+                // [               ]       =  1 / (planeX*dirY-dirX*planeY) * [                 ]
+                // [ planeY   dirY ]                                          [ -planeY  planeX ]
+
+                float invDet = 1.0f / (planeX * dirY - dirX * planeY); // Required for correct matrix multiplication
+
+                float transformX = invDet * (dirY * spriteX - dirX * spriteY);
+                float transformY = invDet * (-planeY * spriteX + planeX * spriteY); // This is actually the depth inside the screen, that what Z is in 3D
+
+                int spriteScreenX = int((w / 2) * (1 + transformX / transformY));
+
+                // Calculate height of the sprite on screen
+                int spriteHeight = std::abs(int(h / (transformY))); // Using "transformY" instead of the real distance prevents fish-eye
+                // Calculate lowest and highest pixel to fill in current stripe
+                int drawStartY = -spriteHeight / 2 + h / 2;
+                if(drawStartY < 0) drawStartY = 0;
+                int drawEndY = spriteHeight / 2 + h / 2;
+                if(drawEndY >= h) drawEndY = h - 1;
+
+                // Calculate width of the sprite
+                int spriteWidth = std::abs( int (h / (transformY)));
+                int drawStartX = -spriteWidth / 2 + spriteScreenX;
+                if(drawStartX < 0) drawStartX = 0;
+                int drawEndX = spriteWidth / 2 + spriteScreenX;
+                if(drawEndX >= w) drawEndX = w - 1;
+
+                // Loop through every vertical stripe of the sprite on screen
+                for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                    int texX = int(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * portal_rt.getSize().x / spriteWidth) / 256;
+                    // The conditions in the if are:
+                    // 1) It's in front of camera plane so you don't see things behind you
+                    // 2) It's on the screen (left)
+                    // 3) It's on the screen (right)
+                    // 4) ZBuffer, with perpendicular distance
+                    if(transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe]) {
+                        int top_d = drawStartY * 256 - h * 128 + spriteHeight * 128; // 256 and 128 factors to avoid floats
+                        int top_texY = ((top_d * portal_rt.getSize().y) / spriteHeight) / 256;
+
+                        int bottom_d = drawEndY * 256 - h * 128 + spriteHeight * 128; // 256 and 128 factors to avoid floats
+                        int bottom_texY = ((bottom_d * portal_rt.getSize().y) / spriteHeight) / 256;
+
+                        // Top
+                        portal_vertex.texCoords = sf::Vector2f(texX, top_texY);
+                        portal_vertex.position = sf::Vector2f(stripe, bobbing_y_offset + drawStartY);
+                        portal_lines.append(portal_vertex);
+
+                        // Bottom
+                        portal_vertex.texCoords = sf::Vector2f(texX, bottom_texY);
+                        portal_vertex.position = sf::Vector2f(stripe, bobbing_y_offset + drawEndY);
+                        portal_lines.append(portal_vertex);
+//
+//                        // Brightness
+//                        const float distance = magnitude(sf::Vector2f(mapX - posX + (side == 1 ? wallX : 0), mapY - posY + (side == 0 ? wallX : 0)));
+//                        setBrightness(wall_lines[idx_vx + 0], distance, darkness_distance);
+//                        setBrightness(wall_lines[idx_vx + 1], distance, darkness_distance);
+                    }
+                }
             }
         }
 
@@ -727,8 +804,7 @@ int main() {
 
                 // Portal
                 {
-                    sf::Sprite portal_rt_sprite(portal_rt.getTexture());
-                    rt.draw(portal_rt_sprite);
+                    rt.draw(portal_lines, &portal_rt.getTexture());
                 }
 
                 // Draw Minimap
