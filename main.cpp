@@ -223,6 +223,13 @@ int main() {
     ambient.setLoop(true);
     ambient.play();
 
+    // Breathe
+    sf::Music breath;
+    breath.openFromFile("breath.ogg");
+    breath.setLoop(true);
+    breath.play();
+    breath.setPitch(1.5f);
+
     // Sounds
     std::unordered_map<std::string, sf::SoundBuffer> sound_buffers;
     sound_buffers["walk1"].loadFromFile("walk1.wav");
@@ -473,6 +480,8 @@ int main() {
                                            (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) -
                                             (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)));
 
+                    bool moving = input_dir.x != 0 || input_dir.y != 0;
+
                     // Bobbing
                     {
                         bool moving = input_dir.x != 0 || input_dir.y != 0;
@@ -491,6 +500,16 @@ int main() {
                             }
                         }
                         else walk_played = false;
+                    }
+
+                    // Breathe
+                    {
+                        const float target_pitch = moving ? 2.f : 1.f;
+                        float curr_pitch = breath.getPitch();
+                        if(target_pitch != curr_pitch) {
+                            float new_pitch = curr_pitch + (target_pitch - curr_pitch) * dt;
+                            if(new_pitch != curr_pitch) breath.setPitch(new_pitch);
+                        }
                     }
 
                     // Move forward or back
