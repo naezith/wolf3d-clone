@@ -521,6 +521,12 @@ int main() {
                             move(dir * moveSpeed);
                         }
                     }
+
+                    // Portal collision
+                    {
+                        auto diff_vec = curr_lvl().portal_position - sf::Vector2f(posX, posY);
+                        if(magnitude(diff_vec) < 0.5f) next_level();
+                    }
                 }
 
                 // Update minimap rotation
