@@ -486,8 +486,8 @@ int main() {
                     {
                         bool moving = input_dir.x != 0 || input_dir.y != 0;
                         if(moving) walking_timer += dt;
-                        float sin_val = sin(17.0f * walking_timer + 2.0f * total_timer);
-                        bobbing_y_offset = h * (moving ? 0.008 : 0.004) * sin_val;
+                        float sin_val = sin(15.0f * walking_timer + 2.0f * total_timer);
+                        bobbing_y_offset = h * (moving ? 0.016 : 0.008) * sin_val;
 
                         // Walking sound effect
                         // When bobbing reaches to bottom, play walk sound once
