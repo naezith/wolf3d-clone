@@ -42,14 +42,19 @@ static const sf::Vector2i wall_texture_indexes[] = {
 };
 
 struct level {
+    sf::Vector2f initial_direction;
+    sf::Vector2f spawn_position;
     sf::Vector2f portal_position;
     const int map[mapWidth][mapHeight];
 };
 
-const level levels[] = {
+static const int level_count = 3;
+static const level levels[level_count] = {
     {
-    sf::Vector2f{12.5f, 12.5f},
-    {
+        sf::Vector2f(-1.f, 0.f),
+        sf::Vector2f(22.f, 12.f),
+        sf::Vector2f{12.5f, 12.5f},
+        {
             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
             {1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 1, 1, 1},
             {1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 1, 1, 1},
@@ -77,8 +82,10 @@ const level levels[] = {
         }
     },
     {
-    sf::Vector2f{12.5f, 12.5f},
-    {
+        sf::Vector2f(-1.f, 0.f),
+        sf::Vector2f(22.f, 12.f),
+        sf::Vector2f{12.5f, 12.5f},
+        {
             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 0, 0, 3, 3, 3, 3, 3, 3, 0, 5, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -106,8 +113,10 @@ const level levels[] = {
         }
     },
     {
-    sf::Vector2f{12.5f, 12.5f},
-    {
+        sf::Vector2f(-1.f, 0.f),
+        sf::Vector2f(22.f, 12.f),
+        sf::Vector2f{12.5f, 12.5f},
+        {
             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
             {1, 0, 3, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 4, 3, 3, 3, 3, 3, 2, 0, 1},
@@ -344,11 +353,10 @@ int main() {
     fps_text.setFont(font);
 
     // Variables
-    float posX = 22, posY = 12;  // X and Y start position
-    float dirX = -1, dirY = 0; // Initial direction vector
-    float planeX = 0, planeY = fov; // The 2d ray caster version of camera plane
-    int level_id = 0;
-    auto curr_lvl = [&level_id] { return levels[level_id]; };
+    int level_id = -1;
+    float posX, posY;  // X and Y start position
+    float dirX, dirY; // Initial direction vector
+    float planeX, planeY; // The 2d ray caster version of camera plane
 
     // Move camera
     auto moveCamera = [&dirX, &dirY, &planeX, &planeY](const float amount, const float dt) {
@@ -378,6 +386,29 @@ int main() {
     const float fps_average_every_seconds = 1.0f;
     float fps_time_sum = 0.0f;
     int fps_capture_count = 0;
+
+    // Level functions
+    auto curr_lvl = [&level_id] { return levels[level_id]; };
+
+    auto change_level = [&level_id, &curr_lvl, &posX, &posY, &dirX, &dirY, &planeX, &planeY] (int id) {
+        level_id = std::min(std::max(id, 0), level_count);
+
+        posX = curr_lvl().spawn_position.x;
+        posY = curr_lvl().spawn_position.y;
+        dirX = curr_lvl().initial_direction.x;
+        dirY = curr_lvl().initial_direction.y;
+        planeX = 0;
+        planeY = fov;
+    };
+
+    auto next_level = [&level_id, &change_level] {
+        int next = level_id + 1;
+        if(next >= level_count) next = 0;
+        change_level(next);
+    };
+
+    // Start with the first level
+    change_level(0);
 
     while(window.isOpen()) {
         // Calculate the elapsed time and add it to lag
@@ -429,6 +460,10 @@ int main() {
                 sf::Mouse::setPosition(mouse_prev_pos = window_center, window);
             }
 
+            static bool prev_key_press = false;
+            bool curr_key_press = sf::Keyboard::isKeyPressed(sf::Keyboard::H);
+            if(curr_key_press && !prev_key_press) next_level();
+            prev_key_press = curr_key_press;
             // Update everything
             {
                 // Character movement
