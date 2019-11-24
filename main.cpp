@@ -777,13 +777,6 @@ int main() {
 
             // Portal
             {
-                // Refresh the rotated portal texture
-                {
-                    portal_rt.clear(sf::Color::Transparent);
-                    portal_rt.draw(portal_sprite);
-                    portal_rt.display();
-                }
-
                 // Prepare lines
                 portal_lines.clear();
 
@@ -879,7 +872,17 @@ int main() {
 
                 // Portal
                 {
-                    rt.draw(portal_lines, &portal_rt.getTexture());
+                    // Refresh the rotated portal texture
+                    {
+                        portal_rt.clear(sf::Color::Transparent);
+                        portal_rt.draw(portal_sprite);
+                        portal_rt.display();
+                    }
+                    
+                    // Draw the lines using the portal render texture
+                    {
+                        rt.draw(portal_lines, &portal_rt.getTexture());
+                    }
                 }
 
                 // Draw Minimap
